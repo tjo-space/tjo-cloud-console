@@ -17,3 +17,8 @@ or anything else that speaks kubernetes.
 
 Maybe. Maybe not needed if we can use some of the shelf kubernetes ui instead. All resources should be just
 kubernetes resources anyways.
+
+## Dependencies
+
+- [actix/actix-web](https://github.com/actix/actix-web)
+- [kube-rs/kube](https://github.com/kube-rs/kube)
