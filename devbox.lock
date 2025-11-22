@@ -1,0 +1,113 @@
+{
+  "lockfile_version": "1",
+  "packages": {
+    "clippy@latest": {
+      "last_modified": "2025-11-15T07:28:48Z",
+      "resolved": "github:NixOS/nixpkgs/1d4c88323ac36805d09657d13a5273aea1b34f0c#clippy",
+      "source": "devbox-search",
+      "version": "1.90.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/sdiplrsl0p1g7ja2s2rwfgb3g26hcglr-clippy-1.90.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/sdiplrsl0p1g7ja2s2rwfgb3g26hcglr-clippy-1.90.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/86hmihvlhf8x1q842s6xk7ankix15b1m-clippy-1.90.0",
+              "default": true
+            },
+            {
+              "name": "debug",
+              "path": "/nix/store/rkzzvgwgnm4gw8kb94pfjfk8pq185i9l-clippy-1.90.0-debug"
+            }
+          ],
+          "store_path": "/nix/store/86hmihvlhf8x1q842s6xk7ankix15b1m-clippy-1.90.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/xz28ng7v9nsyv4xz83f08v0ljs5wlyx8-clippy-1.90.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/xz28ng7v9nsyv4xz83f08v0ljs5wlyx8-clippy-1.90.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/qcxvpfgndrgmr9w6qb1wqbbgddgkybwv-clippy-1.90.0",
+              "default": true
+            },
+            {
+              "name": "debug",
+              "path": "/nix/store/kxbzs8j6y8bwmwy4l9xqd48v3218zi9m-clippy-1.90.0-debug"
+            }
+          ],
+          "store_path": "/nix/store/qcxvpfgndrgmr9w6qb1wqbbgddgkybwv-clippy-1.90.0"
+        }
+      }
+    },
+    "github:NixOS/nixpkgs/nixpkgs-unstable": {
+      "last_modified": "2025-11-20T06:07:48Z",
+      "resolved": "github:NixOS/nixpkgs/a8d610af3f1a5fb71e23e08434d8d61a466fc942?lastModified=1763618868&narHash=sha256-v5afmLjn%2FuyD9EQuPBn7nZuaZVV9r%2BJerayK%2F4wvdWA%3D"
+    },
+    "rustfmt@latest": {
+      "last_modified": "2025-11-15T07:28:48Z",
+      "resolved": "github:NixOS/nixpkgs/1d4c88323ac36805d09657d13a5273aea1b34f0c#rustfmt",
+      "source": "devbox-search",
+      "version": "1.90.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/frs8x9j9v3apynzrjk36fg9lf5qi87jq-rustfmt-1.90.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/frs8x9j9v3apynzrjk36fg9lf5qi87jq-rustfmt-1.90.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/5pvf83ki8dmr9bm4y5ph7g0l1qaca9xv-rustfmt-1.90.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/5pvf83ki8dmr9bm4y5ph7g0l1qaca9xv-rustfmt-1.90.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/z7z8wx0k6wv119jxzxdcsazg53qyrz90-rustfmt-1.90.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/z7z8wx0k6wv119jxzxdcsazg53qyrz90-rustfmt-1.90.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/i873iag6s28f9fvw3j00h0k4nc8f3706-rustfmt-1.90.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/i873iag6s28f9fvw3j00h0k4nc8f3706-rustfmt-1.90.0"
+        }
+      }
+    }
+  }
+}
