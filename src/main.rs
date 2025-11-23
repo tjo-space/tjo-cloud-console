@@ -1,28 +1,49 @@
-use actix_web::{App, HttpResponse, HttpServer, Responder, get, post, web};
+#![allow(unused_imports, unused_variables)]
+use actix_web::{
+    get, middleware, web::Data, App, HttpRequest, HttpResponse, HttpServer, Responder,
+};
+pub use console::{self, telemetry, State};
+
+#[get("/metrics")]
+async fn metrics(c: Data<State>, _req: HttpRequest) -> impl Responder {
+    let metrics = c.metrics();
+    HttpResponse::Ok()
+        .content_type("application/openmetrics-text; version=1.0.0; charset=utf-8")
+        .body(metrics)
+}
+
+#[get("/health")]
+async fn health(_: HttpRequest) -> impl Responder {
+    HttpResponse::Ok().json("healthy")
+}
 
 #[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
+async fn index(c: Data<State>, _req: HttpRequest) -> impl Responder {
+    let d = c.diagnostics().await;
+    HttpResponse::Ok().json(&d)
 }
 
-#[post("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
-}
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    telemetry::init().await;
 
-async fn manual_hello() -> impl Responder {
-    HttpResponse::Ok().body("Hey there!")
-}
+    // Initiatilize Kubernetes controller state
+    let state = State::default();
+    let console = console::run(state.clone());
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
+    // Start web server
+    let server = HttpServer::new(move || {
         App::new()
-            .service(hello)
-            .service(echo)
-            .route("/hey", web::get().to(manual_hello))
+            .app_data(Data::new(state.clone()))
+            .wrap(middleware::Logger::default().exclude("/health"))
+            .service(index)
+            .service(health)
+            .service(metrics)
     })
-    .bind(("127.0.0.1", 8080))?
-    .run()
-    .await
+    .bind("0.0.0.0:8080")?
+    .shutdown_timeout(5);
+
+    // Both runtimes implements graceful shutdown, so poll until both are done
+    tokio::join!(console, server.run()).1?;
+    Ok(())
 }

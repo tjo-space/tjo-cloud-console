@@ -1,6 +1,54 @@
 {
   "lockfile_version": "1",
   "packages": {
+    "cargo-outdated@latest": {
+      "last_modified": "2025-11-15T07:28:48Z",
+      "resolved": "github:NixOS/nixpkgs/1d4c88323ac36805d09657d13a5273aea1b34f0c#cargo-outdated",
+      "source": "devbox-search",
+      "version": "0.18.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/qfah6sfhlsjn4ggf1qy973pdwz79b54a-cargo-outdated-0.18.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/qfah6sfhlsjn4ggf1qy973pdwz79b54a-cargo-outdated-0.18.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/c200vjii9sdaxqqwn3gngs4avpvw1dn5-cargo-outdated-0.18.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/c200vjii9sdaxqqwn3gngs4avpvw1dn5-cargo-outdated-0.18.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/l2249rb6jkqdycd34yslgi0axj07sjw1-cargo-outdated-0.18.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/l2249rb6jkqdycd34yslgi0axj07sjw1-cargo-outdated-0.18.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/k706z0knjqiynwn9f4m15k9lx8qh4380-cargo-outdated-0.18.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/k706z0knjqiynwn9f4m15k9lx8qh4380-cargo-outdated-0.18.0"
+        }
+      }
+    },
     "clippy@latest": {
       "last_modified": "2025-11-15T07:28:48Z",
       "resolved": "github:NixOS/nixpkgs/1d4c88323ac36805d09657d13a5273aea1b34f0c#clippy",
