@@ -15,6 +15,7 @@ use serde_json::json;
 
 pub static DATABASE_FINALIZER: &str = "database.postgresql.tjo.cloud";
 
+/// Database on the postgresql.tjo.cloud database platform
 #[derive(CustomResource, Deserialize, Serialize, Clone, Debug, JsonSchema)]
 #[cfg_attr(test, derive(Default))]
 #[kube(
@@ -23,8 +24,7 @@ pub static DATABASE_FINALIZER: &str = "database.postgresql.tjo.cloud";
     version = "v1",
     namespaced,
     shortname = "dat",
-    status = "DatabaseStatus",
-    doc = "Database on the postgresql.tjo.cloud database platform"
+    status = "DatabaseStatus"
 )]
 pub struct DatabaseSpec {
     #[schemars(length(min = 3, max = 63))]

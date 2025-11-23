@@ -15,6 +15,7 @@ use serde_json::json;
 
 pub static USER_FINALIZER: &str = "user.postgresql.tjo.cloud";
 
+/// User on the postgresql.tjo.cloud database platform
 #[derive(CustomResource, Deserialize, Serialize, Clone, Debug, JsonSchema)]
 #[cfg_attr(test, derive(Default))]
 #[kube(
@@ -23,8 +24,7 @@ pub static USER_FINALIZER: &str = "user.postgresql.tjo.cloud";
     version = "v1",
     namespaced,
     shortname = "dat",
-    status = "UserStatus",
-    doc = "User on the postgresql.tjo.cloud database platform"
+    status = "UserStatus"
 )]
 pub struct UserSpec {
     #[schemars(length(min = 3, max = 63))]
