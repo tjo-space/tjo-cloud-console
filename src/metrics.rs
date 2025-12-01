@@ -1,4 +1,4 @@
-use crate::{Document, Error};
+use crate::Error;
 use kube::ResourceExt;
 use opentelemetry::trace::TraceId;
 use prometheus_client::{
@@ -82,10 +82,10 @@ impl ReconcileMetrics {
         self
     }
 
-    pub fn set_failure(&self, doc: &Document, e: &Error) {
+    pub fn set_failure(&self, name: String, e: &Error) {
         self.failures
             .get_or_create(&ErrorLabels {
-                instance: doc.name_any(),
+                instance: name,
                 error: e.metric_label(),
             })
             .inc();

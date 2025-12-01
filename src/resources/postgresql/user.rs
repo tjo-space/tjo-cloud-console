@@ -23,7 +23,7 @@ pub static USER_FINALIZER: &str = "user.postgresql.tjo.cloud";
     group = "postgresql.tjo.cloud",
     version = "v1",
     namespaced,
-    shortname = "dat",
+    shortname = "user",
     status = "UserStatus"
 )]
 pub struct UserSpec {

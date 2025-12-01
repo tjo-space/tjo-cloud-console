@@ -24,7 +24,7 @@ pub static TOKEN_FINALIZER: &str = "token.s3.tjo.cloud";
     group = "s3.tjo.cloud",
     version = "v1",
     namespaced,
-    shortname = "buc",
+    shortname = "tok",
     status = "TokenStatus"
 )]
 pub struct TokenSpec {

@@ -3,10 +3,10 @@ set shell := ["devbox", "run"]
 # Load dotenv
 set dotenv-load
 
-pre-commit: test lint format
-
 default:
   @just --list
+
+pre-commit: test lint format
 
 run:
   @cargo run

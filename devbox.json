@@ -4,5 +4,8 @@
     "rustfmt@latest",
     "clippy@latest",
     "cargo-outdated@latest",
+    "rustc@latest",
+    "cargo@latest",
+    "just@latest",
   ],
 }

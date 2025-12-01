@@ -1,55 +1,205 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: documents.kube.rs
+  name: buckets.s3.tjo.cloud
 spec:
-  group: kube.rs
+  group: s3.tjo.cloud
   names:
     categories: []
-    kind: Document
-    plural: documents
+    kind: Bucket
+    plural: buckets
     shortNames:
-    - doc
-    singular: document
+    - buc
+    singular: bucket
   scope: Namespaced
   versions:
   - additionalPrinterColumns: []
     name: v1
     schema:
       openAPIV3Schema:
-        description: Auto-generated derived type for DocumentSpec via `CustomResource`
+        description: Auto-generated derived type for BucketSpec via `CustomResource`
         properties:
           spec:
-            description: |-
-              Generate the Kubernetes wrapper struct `Document` from our Spec and Status struct
-
-              This provides a hook for generating the CRD yaml (in crdgen.rs)
-              NB: CustomResource generates a pub struct Document here
-              To query for documents.kube.rs with kube, use Api<Document>.
+            description: Represents a bucket in s3.tjo.cloud.
             properties:
-              content:
+              location:
                 type: string
-              hide:
-                type: boolean
-              title:
+              name:
+                maxLength: 63
+                minLength: 3
                 type: string
             required:
-            - content
-            - hide
-            - title
+            - location
+            - name
             type: object
           status:
-            description: The status object of `Document`
             nullable: true
             properties:
-              hidden:
+              created:
                 type: boolean
             required:
-            - hidden
+            - created
             type: object
         required:
         - spec
-        title: Document
+        title: Bucket
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: tokens.s3.tjo.cloud
+spec:
+  group: s3.tjo.cloud
+  names:
+    categories: []
+    kind: Token
+    plural: tokens
+    shortNames:
+    - tok
+    singular: token
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns: []
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: Auto-generated derived type for TokenSpec via `CustomResource`
+        properties:
+          spec:
+            description: Represents a token to access bucket in s3.tjo.cloud.
+            properties:
+              location:
+                type: string
+              name:
+                maxLength: 63
+                minLength: 3
+                type: string
+            required:
+            - location
+            - name
+            type: object
+          status:
+            nullable: true
+            properties:
+              created:
+                type: boolean
+            required:
+            - created
+            type: object
+        required:
+        - spec
+        title: Token
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: databases.postgresql.tjo.cloud
+spec:
+  group: postgresql.tjo.cloud
+  names:
+    categories: []
+    kind: Database
+    plural: databases
+    shortNames:
+    - dat
+    singular: database
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns: []
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: Auto-generated derived type for DatabaseSpec via `CustomResource`
+        properties:
+          spec:
+            description: Database on the postgresql.tjo.cloud database platform
+            properties:
+              location:
+                type: string
+              name:
+                maxLength: 63
+                minLength: 3
+                type: string
+            required:
+            - location
+            - name
+            type: object
+          status:
+            nullable: true
+            properties:
+              created:
+                type: boolean
+            required:
+            - created
+            type: object
+        required:
+        - spec
+        title: Database
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: users.postgresql.tjo.cloud
+spec:
+  group: postgresql.tjo.cloud
+  names:
+    categories: []
+    kind: User
+    plural: users
+    shortNames:
+    - user
+    singular: user
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns: []
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: Auto-generated derived type for UserSpec via `CustomResource`
+        properties:
+          spec:
+            description: User on the postgresql.tjo.cloud database platform
+            properties:
+              databaseRef:
+                type: string
+              name:
+                maxLength: 63
+                minLength: 3
+                type: string
+              secretRef:
+                type: string
+            required:
+            - databaseRef
+            - name
+            - secretRef
+            type: object
+          status:
+            nullable: true
+            properties:
+              created:
+                type: boolean
+            required:
+            - created
+            type: object
+        required:
+        - spec
+        title: User
         type: object
     served: true
     storage: true

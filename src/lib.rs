@@ -15,6 +15,8 @@ pub enum Error {
 
     #[error("IllegalDocument")]
     IllegalDocument,
+    #[error("IllegalDatabase")]
+    IllegalDatabase,
 }
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
@@ -34,6 +36,9 @@ pub mod telemetry;
 /// Metrics
 mod metrics;
 pub use metrics::Metrics;
+
+/// Resources
+pub mod resources;
 
 #[cfg(test)]
 pub mod fixtures;
