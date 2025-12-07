@@ -25,4 +25,12 @@ Candidates:
 ## Dependencies
 
 - [actix/actix-web](https://github.com/actix/actix-web)
+  - HTTP Server (todo: might not be needed?)
 - [kube-rs/kube](https://github.com/kube-rs/kube)
+  - Kubernetes Client/Tooling
+- [postgres](https://github.com/rust-postgres/rust-postgres)
+  - Postgresql Client
+- [awc](https://lib.rs/crates/awc)
+  - HTTP Client
+- [opentelemetry](https://github.com/open-telemetry/opentelemetry-rust)
+  - Monitoring/Observability. TODO: Currently copy-paste mess.

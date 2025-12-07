@@ -24,10 +24,14 @@ telemetry = ["opentelemetry-otlp"]
 [dependencies]
 # Actix
 actix-web = "4"
-# Kube
+awc = "3.8.1"
+# Kubernetes
 kube = { version = "2.0.1", features = ["runtime", "derive", "client"] }
 k8s-openapi = { version = "0.26.0", features = ["latest", "schemars"] }
 schemars = { version = "1" }
+# Postgresql
+tokio-postgres = "0.7.15"
+postgres-native-tls = "0.5.2"
 
 # Copypasta
 futures = "0.3.31"
