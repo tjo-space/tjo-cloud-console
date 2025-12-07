@@ -27,11 +27,7 @@ pub static BUCKET_FINALIZER: &str = "bucket.s3.tjo.cloud";
     shortname = "buc",
     status = "BucketStatus"
 )]
-pub struct BucketSpec {
-    #[schemars(length(min = 3, max = 63))]
-    pub name: String,
-    pub location: String,
-}
+pub struct BucketSpec {}
 
 #[derive(Deserialize, Serialize, Clone, Default, Debug, JsonSchema)]
 pub struct BucketStatus {

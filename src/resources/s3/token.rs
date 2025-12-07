@@ -28,9 +28,10 @@ pub static TOKEN_FINALIZER: &str = "token.s3.tjo.cloud";
     status = "TokenStatus"
 )]
 pub struct TokenSpec {
-    #[schemars(length(min = 3, max = 63))]
-    pub name: String,
-    pub location: String,
+    pub bucketRef: String, // Reference to bucket object, to which this token will have access to.
+    pub reader: bool,
+    pub writer: bool,
+    pub owner: bool,
 }
 
 #[derive(Deserialize, Serialize, Clone, Default, Debug, JsonSchema)]

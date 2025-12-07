@@ -7,5 +7,7 @@
     "rustc@latest",
     "cargo@latest",
     "just@latest",
+    "kind@latest",
+    "kubectx@latest",
   ],
 }

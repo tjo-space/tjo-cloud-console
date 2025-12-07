@@ -22,16 +22,6 @@ spec:
         properties:
           spec:
             description: Represents a bucket in s3.tjo.cloud.
-            properties:
-              location:
-                type: string
-              name:
-                maxLength: 63
-                minLength: 3
-                type: string
-            required:
-            - location
-            - name
             type: object
           status:
             nullable: true
@@ -74,15 +64,19 @@ spec:
           spec:
             description: Represents a token to access bucket in s3.tjo.cloud.
             properties:
-              location:
+              bucketRef:
                 type: string
-              name:
-                maxLength: 63
-                minLength: 3
-                type: string
+              owner:
+                type: boolean
+              reader:
+                type: boolean
+              writer:
+                type: boolean
             required:
-            - location
-            - name
+            - bucketRef
+            - owner
+            - reader
+            - writer
             type: object
           status:
             nullable: true

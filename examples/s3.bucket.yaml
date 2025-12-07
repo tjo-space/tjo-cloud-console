@@ -1,0 +1,6 @@
+kind: Bucket
+apiVersion: s3.tjo.cloud/v1
+metadata:
+  name: example
+  namespace: default
+spec: {}
