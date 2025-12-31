@@ -2,7 +2,7 @@
 use actix_web::{
     get, middleware, web::Data, App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
-pub use console::{self, telemetry, State};
+pub use console::{self, telemetry, Settings, State};
 
 #[get("/metrics")]
 async fn metrics(c: Data<State>, _req: HttpRequest) -> impl Responder {
@@ -27,8 +27,11 @@ async fn index(c: Data<State>, _req: HttpRequest) -> impl Responder {
 async fn main() -> anyhow::Result<()> {
     telemetry::init().await;
 
+    // Read settings
+    let settings = Settings::new().unwrap();
+
     // Initiatilize Kubernetes controller state
-    let state = State::default();
+    let state = State::new(settings);
     let console = console::run(state.clone());
 
     // Start web server

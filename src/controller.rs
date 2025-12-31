@@ -1,17 +1,16 @@
-use crate::{resources, telemetry, Error, Metrics, Result};
-use chrono::{DateTime, Utc};
+use crate::{resources, telemetry, Diagnostics, Error, Metrics, Result, Settings, State};
+use chrono::Utc;
 use futures::StreamExt;
 use kube::{
     api::{Api, ListParams, ResourceExt},
     client::Client,
     runtime::{
         controller::{Action, Controller},
-        events::{Recorder, Reporter},
+        events::Recorder,
         finalizer::{finalizer, Event as Finalizer},
         watcher::Config,
     },
 };
-use serde::Serialize;
 use std::sync::Arc;
 use tokio::{sync::RwLock, time::Duration};
 use tracing::*;
@@ -29,6 +28,8 @@ pub struct Context {
     pub diagnostics: Arc<RwLock<Diagnostics>>,
     /// Prometheus metrics
     pub metrics: Arc<Metrics>,
+    /// Settings
+    pub settings: Arc<Settings>,
 }
 
 #[instrument(skip(ctx, doc), fields(trace_id))]
@@ -57,63 +58,6 @@ fn error_policy(doc: Arc<Database>, error: &Error, ctx: Arc<Context>) -> Action 
     warn!("reconcile failed: {:?}", error);
     ctx.metrics.reconcile.set_failure(doc.name_any(), error);
     Action::requeue(Duration::from_secs(5 * 60))
-}
-
-/// Diagnostics to be exposed by the web server
-#[derive(Clone, Serialize)]
-pub struct Diagnostics {
-    #[serde(deserialize_with = "from_ts")]
-    pub last_event: DateTime<Utc>,
-    #[serde(skip)]
-    pub reporter: Reporter,
-}
-impl Default for Diagnostics {
-    fn default() -> Self {
-        Self {
-            last_event: Utc::now(),
-            reporter: "doc-controller".into(),
-        }
-    }
-}
-impl Diagnostics {
-    fn recorder(&self, client: Client) -> Recorder {
-        Recorder::new(client, self.reporter.clone())
-    }
-}
-
-/// State shared between the controller and the web server
-#[derive(Clone, Default)]
-pub struct State {
-    /// Diagnostics populated by the reconciler
-    diagnostics: Arc<RwLock<Diagnostics>>,
-    /// Metrics
-    metrics: Arc<Metrics>,
-}
-
-/// State wrapper around the controller outputs for the web server
-impl State {
-    /// Metrics getter
-    pub fn metrics(&self) -> String {
-        let mut buffer = String::new();
-        let registry = &*self.metrics.registry;
-        prometheus_client::encoding::text::encode(&mut buffer, registry).unwrap();
-        buffer
-    }
-
-    /// State getter
-    pub async fn diagnostics(&self) -> Diagnostics {
-        self.diagnostics.read().await.clone()
-    }
-
-    // Create a Controller Context that can update State
-    pub async fn to_context(&self, client: Client) -> Arc<Context> {
-        Arc::new(Context {
-            client: client.clone(),
-            recorder: self.diagnostics.read().await.recorder(client),
-            metrics: self.metrics.clone(),
-            diagnostics: self.diagnostics.clone(),
-        })
-    }
 }
 
 /// Initialize the controller and shared state (given the crd is installed)
@@ -209,7 +153,8 @@ mod test {
     #[ignore = "uses k8s current-context"]
     async fn integration_reconcile_should_set_status_and_send_event() {
         let client = kube::Client::try_default().await.unwrap();
-        let ctx = super::State::default().to_context(client.clone()).await;
+        let settings = super::Settings::new().unwrap();
+        let ctx = super::State::new(settings).to_context(client.clone()).await;
 
         // create a test doc
         let doc = Database::test().finalized().needs_hide();

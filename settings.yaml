@@ -1,0 +1,13 @@
+s3:
+  address: ""
+  token: ""
+
+postgresql:
+  - name: "endor"
+    address: ""
+    username: ""
+    password: ""
+  - name: "nevaroo"
+    address: ""
+    username: ""
+    password: ""

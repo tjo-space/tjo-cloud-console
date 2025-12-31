@@ -32,6 +32,8 @@ schemars = { version = "1" }
 # Postgresql
 tokio-postgres = "0.7.15"
 postgres-native-tls = "0.5.2"
+# Configuration
+config = "0.15.19"
 
 # Copypasta
 futures = "0.3.31"

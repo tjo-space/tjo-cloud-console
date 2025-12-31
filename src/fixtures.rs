@@ -1,5 +1,5 @@
 //! Helper methods only available for tests
-use crate::{Context, Document, DocumentSpec, DocumentStatus, Result, DOCUMENT_FINALIZER};
+use crate::{Context, Result};
 use assert_json_diff::assert_json_include;
 use http::{Request, Response};
 use kube::{client::Body, runtime::events::Recorder, Client, Resource, ResourceExt};
