@@ -4,10 +4,10 @@ s3:
 
 postgresql:
   - name: "endor"
-    address: ""
-    username: ""
+    host: ""
+    user: ""
     password: ""
   - name: "nevaroo"
-    address: ""
-    username: ""
+    host: ""
+    user: ""
     password: ""

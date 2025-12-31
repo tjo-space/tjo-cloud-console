@@ -3,25 +3,25 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
-struct Postgresql {
-    name: String,
-    address: String,
-    username: String,
-    password: String,
+pub struct Postgresql {
+    pub name: String,
+    pub host: String,
+    pub user: String,
+    pub password: String,
 }
 
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
-struct S3 {
-    address: String,
-    token: String,
+pub struct S3 {
+    pub address: String,
+    pub token: String,
 }
 
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
 pub struct Settings {
-    s3: S3,
-    postgresql: Vec<Postgresql>,
+    pub s3: S3,
+    pub postgresql: Vec<Postgresql>,
 }
 
 impl Settings {
@@ -32,5 +32,13 @@ impl Settings {
             .build()?;
 
         settings.try_deserialize()
+    }
+
+    pub fn postgresql(&self) -> &Vec<Postgresql> {
+        &self.postgresql
+    }
+
+    pub fn s3(&self) -> &S3 {
+        &self.s3
     }
 }

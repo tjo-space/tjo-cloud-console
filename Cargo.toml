@@ -51,6 +51,7 @@ opentelemetry_sdk = { version = "0.31", features = ["rt-tokio"] }
 thiserror = "2.0.17"
 anyhow = "1.0.100"
 prometheus-client = "0.24.0"
+native-tls = "0.2.14"
 
 # Copypasta
 [dev-dependencies]
