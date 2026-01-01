@@ -5,8 +5,6 @@ Cloud Console to manage resources, projects.
 This is a Kubernetes Controller to provision resources for:
   - s3.tjo.cloud
   - postgresql.tjo.cloud
-  - ingress.tjo.cloud (?)
-  - argocd.k8s.tjo.cloud (?)
 
 This resources would be defined as custom CRDS. Which would be provisioned by this service.
 

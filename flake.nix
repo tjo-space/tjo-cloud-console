@@ -8,6 +8,7 @@
         nixpkgs.follows = "nixpkgs";
       };
     };
+    crane.url = "github:ipetkov/crane";
   };
   outputs =
     {
@@ -15,6 +16,7 @@
       nixpkgs,
       flake-utils,
       rust-overlay,
+      crane,
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -23,14 +25,53 @@
         pkgs = import nixpkgs {
           inherit system overlays;
         };
+
+        rustToolchain = pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+        craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
+
+        src = craneLib.cleanCargoSource ./.;
+
+        commonArgs = {
+          inherit src;
+          buildInputs = with pkgs; [
+            rustToolchain
+            openssl
+            pkg-config
+          ];
+        };
+
+        cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+
+        bin = craneLib.buildPackage (
+          commonArgs
+          // {
+            inherit cargoArtifacts;
+          }
+        );
+
+        image = pkgs.dockerTools.buildImage {
+          name = "console";
+          tag = "latest";
+          copyToRoot = [
+            bin
+            pkgs.cacert
+          ];
+          config = {
+            Cmd = [ "${bin}/bin/console" ];
+          };
+        };
       in
-      with pkgs;
       {
-        devShells.default = mkShell {
-          buildInputs = [
-            rust-bin.stable.latest.default
-            just
+        packages = {
+          inherit bin image;
+          default = bin;
+        };
+        devShells.default = craneLib.devShell {
+          inputsFrom = [ bin ];
+          packages = with pkgs; [
             kind
+            just
+            kubectl
             kubectx
           ];
         };

@@ -1,7 +1,5 @@
-# Always use devbox environment to run commands.
+# Always use nix environment to run commands.
 set shell := ["nix", "develop", "--command", "bash", "-c"]
-# Load dotenv
-set dotenv-load
 
 default:
   @just --list
@@ -21,8 +19,17 @@ crd-apply: crd-generate
 crd-examples: crd-apply
   @kubectl apply -f examples/s3.bucket.yaml
 
-compile:
-  @cargo build --release --bin console
+build-bin:
+  @nix build .#bin
+  @mkdir -p dist
+  @mv result dist/console
+  @ls -la dist/console
+
+build-image:
+  @nix build .#image
+  @mkdir -p dist
+  @mv result dist/image.tar.gz
+  @ls -la dist/image.tar.gz
 
 test:
   @cargo test
@@ -33,6 +40,7 @@ lint:
 
 format:
   @cargo fix
+  @cargo clippy --fix
   @cargo fmt
 
 cluster-up:
