@@ -1,5 +1,5 @@
 # Always use devbox environment to run commands.
-set shell := ["devbox", "run"]
+set shell := ["nix", "develop", "--command", "bash", "-c"]
 # Load dotenv
 set dotenv-load
 
