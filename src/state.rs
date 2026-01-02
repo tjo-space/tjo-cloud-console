@@ -1,4 +1,4 @@
-use crate::{resources, Context, Metrics, Settings};
+use crate::{Context, Metrics, Settings, resources};
 use chrono::{DateTime, Utc};
 use kube::{
     client::Client,

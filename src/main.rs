@@ -1,8 +1,8 @@
 #![allow(unused_imports, unused_variables)]
 use actix_web::{
-    get, middleware, web::Data, App, HttpRequest, HttpResponse, HttpServer, Responder,
+    App, HttpRequest, HttpResponse, HttpServer, Responder, get, middleware, web::Data,
 };
-pub use console::{self, telemetry, Settings, State};
+pub use console::{self, Settings, State, telemetry};
 use tracing::*;
 
 #[get("/metrics")]

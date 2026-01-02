@@ -1,11 +1,11 @@
 use crate::{Context, Error, Result};
 use kube::{
+    CustomResource, Resource,
     api::{Api, Patch, PatchParams, ResourceExt},
     runtime::{
         controller::Action,
         events::{Event, EventType},
     },
-    CustomResource, Resource,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

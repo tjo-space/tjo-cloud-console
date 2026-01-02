@@ -8,7 +8,7 @@ fn main() {
     ];
 
     for document in documents {
-        print!("---\n");
+        println!("---");
         print!("{}", serde_yaml::to_string(&document).unwrap());
     }
 }

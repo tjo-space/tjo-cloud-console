@@ -1,14 +1,14 @@
-use crate::{resources, telemetry, Diagnostics, Error, Metrics, Result, Settings, State};
+use crate::{Diagnostics, Error, Metrics, Result, Settings, State, resources, telemetry};
 use chrono::Utc;
-use futures::future::try_join_all;
 use futures::StreamExt;
+use futures::future::try_join_all;
 use kube::{
     api::{Api, ListParams, ResourceExt},
     client::Client,
     runtime::{
         controller::{Action, Controller},
         events::Recorder,
-        finalizer::{finalizer, Event as Finalizer},
+        finalizer::{Event as Finalizer, finalizer},
         watcher::Config,
     },
 };
