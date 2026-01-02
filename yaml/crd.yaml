@@ -119,15 +119,15 @@ spec:
           spec:
             description: Database on the postgresql.tjo.cloud database platform
             properties:
-              location:
-                type: string
               name:
                 maxLength: 63
                 minLength: 3
                 type: string
+              server:
+                type: string
             required:
-            - location
             - name
+            - server
             type: object
           status:
             nullable: true

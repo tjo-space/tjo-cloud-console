@@ -30,7 +30,7 @@ configs:
       metrics_token = "5lVvod7yaZM7MtMRJ32Jd8VssQ01ehj1xVaEnikqhxg="
 
 services:
-  postgres:
+  postgresql:
     image: postgres:18
     restart: always
     shm_size: 128mb

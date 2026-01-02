@@ -1,0 +1,8 @@
+kind: Database
+apiVersion: postgresql.tjo.cloud/v1
+metadata:
+  name: example
+  namespace: default
+spec:
+  server: localhost
+  name: foobar

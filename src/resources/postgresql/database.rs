@@ -29,7 +29,7 @@ pub static DATABASE_FINALIZER: &str = "database.postgresql.tjo.cloud";
 pub struct DatabaseSpec {
     #[schemars(length(min = 3, max = 63))]
     pub name: String,
-    pub location: String,
+    pub server: String,
 }
 
 #[derive(Deserialize, Serialize, Clone, Default, Debug, JsonSchema)]
@@ -48,7 +48,7 @@ impl Database {
         let oref = self.object_ref(&());
         let ns = self.namespace().unwrap();
         let name = self.name_any();
-        let docs: Api<Database> = Api::namespaced(client, &ns);
+        let databases: Api<Database> = Api::namespaced(client, &ns);
 
         if !self.was_created() {
             // send an event once per hide
@@ -57,7 +57,7 @@ impl Database {
                     &Event {
                         type_: EventType::Normal,
                         reason: "CreationRequested".into(),
-                        note: Some(format!("Creating `{name}`")),
+                        note: Some(format!("Creating database for `{name}`")),
                         action: "Creating".into(),
                         secondary: None,
                     },
@@ -67,18 +67,29 @@ impl Database {
                 .map_err(Error::KubeError)?;
         }
         if name == "illegal" {
-            return Err(Error::IllegalDatabase); // error names show up in metrics
+            return Err(Error::PostgresqlIllegalDatabase); // error names show up in metrics
         }
+
+        let object: Database = databases.get(&name).await.map_err(Error::KubeError)?;
+
+        if !ctx.postgresql_clients.contains_key(&object.spec.server) {
+            return Err(Error::PostgresqlUnknownServer);
+        }
+
+        ctx.postgresql_clients[&object.spec.server]
+            .execute(&format!("CREATE DATABASE {}", object.spec.name), &[])
+            .await?;
+
         // always overwrite status object with what we saw
         let new_status = Patch::Apply(json!({
             "apiVersion": "kube.rs/v1",
             "kind": "Database",
             "status": DatabaseStatus {
-                created : true, // TODO: Actual logic
+                created : true,
             }
         }));
         let ps = PatchParams::apply("cntrlr").force();
-        let _o = docs
+        databases
             .patch_status(&name, &ps, &new_status)
             .await
             .map_err(Error::KubeError)?;
@@ -87,16 +98,19 @@ impl Database {
         Ok(Action::requeue(Duration::from_secs(5 * 60)))
     }
 
-    // Finalizer cleanup (the object was deleted, ensure nothing is orphaned)
     pub async fn cleanup(&self, ctx: Arc<Context>) -> Result<Action> {
+        let client = ctx.client.clone();
         let oref = self.object_ref(&());
-        // Database doesn't have any real cleanup, so we just publish an event
+        let ns = self.namespace().unwrap();
+        let name = self.name_any();
+        let databases: Api<Database> = Api::namespaced(client, &ns);
+
         ctx.recorder
             .publish(
                 &Event {
                     type_: EventType::Normal,
                     reason: "DeleteRequested".into(),
-                    note: Some(format!("Delete `{}`", self.name_any())),
+                    note: Some(format!("Dropping database for `{}`", self.name_any())),
                     action: "Deleting".into(),
                     secondary: None,
                 },
@@ -104,6 +118,17 @@ impl Database {
             )
             .await
             .map_err(Error::KubeError)?;
+
+        let object: Database = databases.get(&name).await.map_err(Error::KubeError)?;
+
+        if !ctx.postgresql_clients.contains_key(&object.spec.server) {
+            return Err(Error::PostgresqlUnknownServer);
+        }
+
+        ctx.postgresql_clients[&object.spec.server]
+            .execute(&format!("DROP DATABASE {}", object.spec.name), &[])
+            .await?;
+
         Ok(Action::await_change())
     }
 }

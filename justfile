@@ -48,6 +48,7 @@ env-up:
   @kubectx kind-kind
   @docker compose up -d
   @just crd-apply
+  @docker compose logs --follow
 
 env-down:
   @kind delete cluster

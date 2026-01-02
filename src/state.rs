@@ -1,10 +1,11 @@
-use crate::{Context, Metrics, Settings};
+use crate::{resources, Context, Metrics, Settings};
 use chrono::{DateTime, Utc};
 use kube::{
     client::Client,
     runtime::events::{Recorder, Reporter},
 };
 use serde::Serialize;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -73,7 +74,7 @@ impl State {
     pub async fn to_context(
         &self,
         client: Client,
-        //postgresqlClients: todo,
+        postgresql_clients: HashMap<String, resources::postgresql::Client>,
         //s3Clients: todo,
     ) -> Arc<Context> {
         Arc::new(Context {
@@ -82,6 +83,7 @@ impl State {
             metrics: self.metrics.clone(),
             diagnostics: self.diagnostics.clone(),
             settings: self.settings.clone(),
+            postgresql_clients: Arc::new(postgresql_clients),
         })
     }
 }
