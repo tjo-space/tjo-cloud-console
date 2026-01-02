@@ -1,13 +1,10 @@
 s3:
-  address: ""
-  token: ""
+  address: "localhost:3903"
+  token: "5lVvod7yaZM7MtMRJ32Jd8VssQ01ehj1xVaEnikqhxg="
 
 postgresql:
-  - name: "endor"
-    host: ""
-    user: ""
-    password: ""
-  - name: "nevaroo"
-    host: ""
-    user: ""
-    password: ""
+  localhost:
+    host: "localhost"
+    user: "postgres"
+    password: "postgres"
+    sslmode: "disable"

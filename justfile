@@ -43,10 +43,13 @@ format:
   @cargo clippy --fix
   @cargo fmt
 
-cluster-up:
+env-up:
   @kind create cluster
   @kubectx kind-kind
+  @docker compose up -d
+  @just crd-apply
 
-cluster-down:
+env-down:
   @kind delete cluster
   @kubectx  - || true
+  @docker compose down

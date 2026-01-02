@@ -73,6 +73,8 @@
             just
             kubectl
             kubectx
+            pgcli
+            rust-analyzer
           ];
         };
       }

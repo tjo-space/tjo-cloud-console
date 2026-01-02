@@ -1,13 +1,14 @@
 use config::{Config, ConfigError, Environment, File};
 use serde::Deserialize;
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
 pub struct Postgresql {
-    pub name: String,
     pub host: String,
     pub user: String,
     pub password: String,
+    pub sslmode: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -21,7 +22,7 @@ pub struct S3 {
 #[allow(unused)]
 pub struct Settings {
     pub s3: S3,
-    pub postgresql: Vec<Postgresql>,
+    pub postgresql: HashMap<String, Postgresql>,
 }
 
 impl Settings {
@@ -34,7 +35,7 @@ impl Settings {
         settings.try_deserialize()
     }
 
-    pub fn postgresql(&self) -> &Vec<Postgresql> {
+    pub fn postgresql(&self) -> &HashMap<String, Postgresql> {
         &self.postgresql
     }
 

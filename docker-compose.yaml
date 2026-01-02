@@ -1,0 +1,53 @@
+configs:
+  garage.toml:
+    content: |
+      metadata_dir = "/tmp/meta"
+      data_dir = "/tmp/data"
+      db_engine = "sqlite"
+
+      replication_factor = 1
+
+      rpc_bind_addr = "[::]:3901"
+      rpc_public_addr = "127.0.0.1:3901"
+      rpc_secret = "2393097acc5ec3a56b71165fecfc536bb935c56bf44d48a94b0b7a24ce8e8870"
+
+      [s3_api]
+      s3_region = "garage"
+      api_bind_addr = "[::]:3900"
+      root_domain = ".s3.garage.localhost"
+
+      [s3_web]
+      bind_addr = "[::]:3902"
+      root_domain = ".web.garage.localhost"
+      index = "index.html"
+
+      [k2v_api]
+      api_bind_addr = "[::]:3904"
+
+      [admin]
+      api_bind_addr = "[::]:3903"
+      admin_token = "5lVvod7yaZM7MtMRJ32Jd8VssQ01ehj1xVaEnikqhxg="
+      metrics_token = "5lVvod7yaZM7MtMRJ32Jd8VssQ01ehj1xVaEnikqhxg="
+
+services:
+  postgres:
+    image: postgres:18
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 127.0.0.1:5432:5432
+
+  garage:
+    image: dxflrs/garage:v2.1.0
+    restart: unless-stopped
+    configs:
+      - source: garage.toml
+        target: /etc/garage.toml
+    ports:
+      - 127.0.0.1:3900:3900
+      - 127.0.0.1:3901:3901
+      - 127.0.0.1:3902:3902
+      - 127.0.0.1:3903:3903
+      - 127.0.0.1:3904:3904
