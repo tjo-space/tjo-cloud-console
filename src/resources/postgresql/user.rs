@@ -1,17 +1,6 @@
-use futures::{StreamExt, TryStreamExt};
-use k8s_openapi::apiextensions_apiserver::pkg::apis::apiextensions::v1::CustomResourceDefinition;
-use kube::{
-    api::{Api, DeleteParams, Patch, PatchParams, ResourceExt},
-    core::CustomResourceExt,
-    runtime::{
-        wait::{await_condition, conditions},
-        watcher, WatchStreamExt,
-    },
-    Client, CustomResource,
-};
+use kube::CustomResource;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 
 pub static USER_FINALIZER: &str = "user.postgresql.tjo.cloud";
 

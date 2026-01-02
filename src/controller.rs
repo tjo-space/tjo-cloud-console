@@ -17,7 +17,7 @@ use std::sync::Arc;
 use tokio::{sync::RwLock, time::Duration};
 use tracing::*;
 
-use resources::postgresql::{database::*, user::*};
+use resources::postgresql::database::*;
 
 // Context for our reconciler
 #[derive(Clone)]
