@@ -1,7 +1,7 @@
-use crate::{Context, Metrics, Settings, resources};
+use crate::{resources::postgresql::Client as PostgresqlClient, Context, Metrics, Settings};
 use chrono::{DateTime, Utc};
 use kube::{
-    client::Client,
+    client::Client as KubeClient,
     runtime::events::{Recorder, Reporter},
 };
 use serde::Serialize;
@@ -21,12 +21,12 @@ impl Default for Diagnostics {
     fn default() -> Self {
         Self {
             last_event: Utc::now(),
-            reporter: "doc-controller".into(),
+            reporter: "console.tjo.cloud".into(),
         }
     }
 }
 impl Diagnostics {
-    fn recorder(&self, client: Client) -> Recorder {
+    fn recorder(&self, client: KubeClient) -> Recorder {
         Recorder::new(client, self.reporter.clone())
     }
 }
@@ -73,13 +73,13 @@ impl State {
     // Create a Controller Context that can update State
     pub async fn to_context(
         &self,
-        client: Client,
-        postgresql_clients: HashMap<String, resources::postgresql::Client>,
+        kube_client: KubeClient,
+        postgresql_clients: HashMap<String, PostgresqlClient>,
         //s3Clients: todo,
     ) -> Arc<Context> {
         Arc::new(Context {
-            client: client.clone(),
-            recorder: self.diagnostics.read().await.recorder(client),
+            kube_client: kube_client.clone(),
+            recorder: self.diagnostics.read().await.recorder(kube_client),
             metrics: self.metrics.clone(),
             diagnostics: self.diagnostics.clone(),
             settings: self.settings.clone(),
