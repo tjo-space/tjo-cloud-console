@@ -2,6 +2,9 @@ use crate::{resources, Error, State};
 use futures::future::try_join_all;
 use kube::client::Client;
 use std::collections::HashMap;
+use std::sync::Arc;
+
+pub static FINALIZER: &str = "console.tjo.cloud";
 
 /// Initialize the controller and shared state (given the crd is installed)
 pub async fn run(state: State) {
@@ -28,7 +31,19 @@ pub async fn run(state: State) {
         .into_iter()
         .collect();
 
-    resources::postgresql::database::run(state, kube_client, postgresql_clients)
-        .await
-        .expect("Postgresql Database Controller failed");
+    let postgresql_clients = Arc::new(postgresql_clients);
+
+    tokio::try_join!(
+        resources::postgresql::database::run(
+            state.clone(),
+            kube_client.clone(),
+            postgresql_clients.clone(),
+        ),
+        resources::postgresql::user::run(
+            state.clone(),
+            kube_client.clone(),
+            postgresql_clients.clone(),
+        )
+    )
+    .expect("controller failed");
 }

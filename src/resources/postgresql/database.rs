@@ -1,5 +1,7 @@
 use crate::{
-    resources::postgresql::Client as PostgresqlClient, telemetry, Context, Error, Result, State,
+    resources::postgresql::user::{User, UserRef},
+    resources::postgresql::Client as PostgresqlClient,
+    telemetry, Context, Error, Result, State, FINALIZER,
 };
 use chrono::Utc;
 use futures::StreamExt;
@@ -22,8 +24,6 @@ use std::sync::Arc;
 use tokio::time::Duration;
 use tracing::*;
 
-pub static DATABASE_FINALIZER: &str = "database.postgresql.tjo.cloud";
-
 /// Database on the postgresql.tjo.cloud database platform
 #[derive(CustomResource, Deserialize, Serialize, Clone, Debug, JsonSchema)]
 #[cfg_attr(test, derive(Default))]
@@ -36,14 +36,20 @@ pub static DATABASE_FINALIZER: &str = "database.postgresql.tjo.cloud";
     status = "DatabaseStatus"
 )]
 pub struct DatabaseSpec {
-    #[schemars(length(min = 3, max = 63))]
-    pub name: String,
     pub server: String,
+    pub connection_limit: i32,
+    pub owner_ref: UserRef,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, JsonSchema, Default)]
+pub struct DatabaseRef {
+    pub name: String,
 }
 
 #[derive(Deserialize, Serialize, Clone, Default, Debug, JsonSchema)]
 pub struct DatabaseStatus {
     pub created: bool,
+    pub name: String,
 }
 
 impl Database {
@@ -51,13 +57,19 @@ impl Database {
         self.status.as_ref().map(|s| s.created).unwrap_or(false)
     }
 
-    // Reconcile (for non-finalizer related changes)
-    pub async fn reconcile(&self, ctx: Arc<Context>) -> Result<Action> {
-        let client = ctx.kube_client.clone();
-        let oref = self.object_ref(&());
-        let ns = self.namespace().unwrap();
+    fn name(&self) -> String {
+        let namespace = self.namespace().unwrap();
         let name = self.name_any();
-        let databases: Api<Database> = Api::namespaced(client, &ns);
+
+        format!("{}_{}", namespace, name)
+    }
+
+    pub async fn reconcile(&self, ctx: Arc<Context>) -> Result<Action> {
+        let oref = self.object_ref(&());
+        let namespace = self.namespace().unwrap();
+        let name = self.name_any();
+        let databases: Api<Database> = Api::namespaced(ctx.kube_client.clone(), &namespace);
+        let users: Api<User> = Api::namespaced(ctx.kube_client.clone(), &namespace);
 
         // If was already created, do nothing.
         if self.was_created() {
@@ -79,17 +91,35 @@ impl Database {
             .map_err(Error::KubeError)?;
 
         if name == "illegal" {
-            return Err(Error::PostgresqlIllegalDatabase); // error names show up in metrics
+            return Err(Error::PostgresqlIllegalDatabase);
         }
 
-        let object: Database = databases.get(&name).await.map_err(Error::KubeError)?;
+        let database: Database = databases.get(&name).await.map_err(Error::KubeError)?;
 
-        if !ctx.postgresql_clients.contains_key(&object.spec.server) {
+        if !ctx.postgresql_clients.contains_key(&database.spec.server) {
             return Err(Error::PostgresqlUnknownServer);
         }
 
-        ctx.postgresql_clients[&object.spec.server]
-            .execute(&format!("CREATE DATABASE {}", object.spec.name), &[])
+        let user: User = users
+            .get(&database.spec.owner_ref.name)
+            .await
+            .map_err(Error::KubeError)?;
+        let user_status = user.status.expect("User Status is not yet defined");
+
+        if user.spec.server != database.spec.server {
+            return Err(Error::PostgresqlUserAndDatabaseServerNotMatching);
+        }
+
+        ctx.postgresql_clients[&database.spec.server]
+            .execute(
+                &format!(
+                    "CREATE DATABASE '{}' WITH OWNER '{}' CONNECTION LIMIT {}",
+                    database.name(),
+                    user_status.name,
+                    database.spec.connection_limit
+                ),
+                &[],
+            )
             .await?;
 
         ctx.recorder
@@ -106,12 +136,12 @@ impl Database {
             .await
             .map_err(Error::KubeError)?;
 
-        // always overwrite status object with what we saw
         let new_status = Patch::Apply(json!({
             "apiVersion": "postgresql.tjo.cloud/v1",
             "kind": "Database",
             "status": DatabaseStatus {
                 created : true,
+                name: database.name(),
             }
         }));
         let ps = PatchParams::apply("cntrlr").force();
@@ -145,14 +175,14 @@ impl Database {
             .await
             .map_err(Error::KubeError)?;
 
-        let object: Database = databases.get(&name).await.map_err(Error::KubeError)?;
+        let database: Database = databases.get(&name).await.map_err(Error::KubeError)?;
 
-        if !ctx.postgresql_clients.contains_key(&object.spec.server) {
+        if !ctx.postgresql_clients.contains_key(&database.spec.server) {
             return Err(Error::PostgresqlUnknownServer);
         }
 
-        ctx.postgresql_clients[&object.spec.server]
-            .execute(&format!("DROP DATABASE {}", object.spec.name), &[])
+        ctx.postgresql_clients[&database.spec.server]
+            .execute(&format!("DROP DATABASE {}", database.name()), &[])
             .await?;
 
         Ok(Action::await_change())
@@ -171,7 +201,7 @@ async fn reconcile(database: Arc<Database>, ctx: Arc<Context>) -> Result<Action>
     let databases: Api<Database> = Api::namespaced(ctx.kube_client.clone(), &ns);
 
     info!("Reconciling Database \"{}\" in {}", database.name_any(), ns);
-    finalizer(&databases, DATABASE_FINALIZER, database, |event| async {
+    finalizer(&databases, FINALIZER, database, |event| async {
         match event {
             Finalizer::Apply(database) => database.reconcile(ctx.clone()).await,
             Finalizer::Cleanup(database) => database.cleanup(ctx.clone()).await,
@@ -193,7 +223,7 @@ fn error_policy(database: Arc<Database>, error: &Error, ctx: Arc<Context>) -> Ac
 pub async fn run(
     state: State,
     kube_client: KubeClient,
-    postgresql_clients: HashMap<String, PostgresqlClient>,
+    postgresql_clients: Arc<HashMap<String, PostgresqlClient>>,
 ) -> Result<(), Error> {
     let databases = Api::<Database>::all(kube_client.clone());
     if databases

@@ -32,8 +32,14 @@ pub enum Error {
     #[error("PostgresqlIllegalDatabase")]
     PostgresqlIllegalDatabase,
 
+    #[error("PostgresqlIllegalUser")]
+    PostgresqlIllegalUser,
+
     #[error("PostgresqlUnknownServer")]
     PostgresqlUnknownServer,
+
+    #[error("PostgresqlUserAndDatabaseServerNotMatching")]
+    PostgresqlUserAndDatabaseServerNotMatching,
 }
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 

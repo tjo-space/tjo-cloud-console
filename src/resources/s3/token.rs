@@ -1,8 +1,7 @@
+use crate::resources::s3::bucket::BucketRef;
 use kube::CustomResource;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-pub static TOKEN_FINALIZER: &str = "token.s3.tjo.cloud";
 
 /// Represents a token to access bucket in s3.tjo.cloud.
 ///
@@ -17,7 +16,7 @@ pub static TOKEN_FINALIZER: &str = "token.s3.tjo.cloud";
     status = "TokenStatus"
 )]
 pub struct TokenSpec {
-    pub bucketRef: String, // Reference to bucket object, to which this token will have access to.
+    pub bucket_ref: BucketRef,
     pub reader: bool,
     pub writer: bool,
     pub owner: bool,

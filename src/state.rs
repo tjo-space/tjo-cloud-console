@@ -74,7 +74,7 @@ impl State {
     pub async fn to_context(
         &self,
         kube_client: KubeClient,
-        postgresql_clients: HashMap<String, PostgresqlClient>,
+        postgresql_clients: Arc<HashMap<String, PostgresqlClient>>,
         //s3Clients: todo,
     ) -> Arc<Context> {
         Arc::new(Context {
@@ -83,7 +83,7 @@ impl State {
             metrics: self.metrics.clone(),
             diagnostics: self.diagnostics.clone(),
             settings: self.settings.clone(),
-            postgresql_clients: Arc::new(postgresql_clients),
+            postgresql_clients,
         })
     }
 }

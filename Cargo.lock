@@ -539,6 +539,7 @@ dependencies = [
  "opentelemetry_sdk",
  "postgres-native-tls",
  "prometheus-client",
+ "rand",
  "schemars",
  "serde",
  "serde_json",

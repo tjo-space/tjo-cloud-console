@@ -1,21 +1,6 @@
-use crate::{resources, telemetry, Diagnostics, Error, Metrics, Result, Settings, State};
-use chrono::Utc;
-use futures::future::try_join_all;
-use futures::StreamExt;
-use kube::{
-    api::{Api, ListParams, ResourceExt},
-    runtime::{
-        controller::{Action, Controller},
-        events::Recorder,
-        finalizer::{finalizer, Event as Finalizer},
-        watcher::Config,
-    },
-};
+use crate::{Error, Result};
 use native_tls::TlsConnector;
 use postgres_native_tls::MakeTlsConnector;
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::{sync::RwLock, time::Duration};
 use tracing::*;
 
 pub mod database;

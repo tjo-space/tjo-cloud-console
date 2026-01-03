@@ -1,8 +1,20 @@
-kind: Database
 apiVersion: postgresql.tjo.cloud/v1
+kind: User
 metadata:
   name: example
   namespace: default
 spec:
   server: localhost
-  name: foobar
+  passwordSecretName: example-user
+  connectionLimit: 10
+---
+apiVersion: postgresql.tjo.cloud/v1
+kind: Database
+metadata:
+  name: example
+  namespace: default
+spec:
+  server: localhost
+  ownerRef:
+    name: example
+  connectionLimit: 10

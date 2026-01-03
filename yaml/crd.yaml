@@ -22,6 +22,14 @@ spec:
         properties:
           spec:
             description: Represents a bucket in s3.tjo.cloud.
+            properties:
+              name:
+                maxLength: 63
+                minLength: 3
+                pattern: '[a-z0-9.-]+'
+                type: string
+            required:
+            - name
             type: object
           status:
             nullable: true
@@ -64,8 +72,13 @@ spec:
           spec:
             description: Represents a token to access bucket in s3.tjo.cloud.
             properties:
-              bucketRef:
-                type: string
+              bucket_ref:
+                properties:
+                  name:
+                    type: string
+                required:
+                - name
+                type: object
               owner:
                 type: boolean
               reader:
@@ -73,7 +86,7 @@ spec:
               writer:
                 type: boolean
             required:
-            - bucketRef
+            - bucket_ref
             - owner
             - reader
             - writer
@@ -119,14 +132,21 @@ spec:
           spec:
             description: Database on the postgresql.tjo.cloud database platform
             properties:
-              name:
-                maxLength: 63
-                minLength: 3
-                type: string
+              connection_limit:
+                format: int32
+                type: integer
+              owner_ref:
+                properties:
+                  name:
+                    type: string
+                required:
+                - name
+                type: object
               server:
                 type: string
             required:
-            - name
+            - connection_limit
+            - owner_ref
             - server
             type: object
           status:
@@ -134,8 +154,11 @@ spec:
             properties:
               created:
                 type: boolean
+              name:
+                type: string
             required:
             - created
+            - name
             type: object
         required:
         - spec
@@ -170,26 +193,29 @@ spec:
           spec:
             description: User on the postgresql.tjo.cloud database platform
             properties:
-              databaseRef:
+              connection_limit:
+                format: int32
+                type: integer
+              password_secret_name:
+                description: Name of the secret that will be created and contain the generated password.
                 type: string
-              name:
-                maxLength: 63
-                minLength: 3
-                type: string
-              secretRef:
+              server:
                 type: string
             required:
-            - databaseRef
-            - name
-            - secretRef
+            - connection_limit
+            - password_secret_name
+            - server
             type: object
           status:
             nullable: true
             properties:
               created:
                 type: boolean
+              name:
+                type: string
             required:
             - created
+            - name
             type: object
         required:
         - spec
