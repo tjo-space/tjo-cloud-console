@@ -1,8 +1,9 @@
 #![allow(unused_imports, unused_variables)]
 use actix_web::{
-    App, HttpRequest, HttpResponse, HttpServer, Responder, get, middleware, web::Data,
+    get, middleware, web::Data, App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
-pub use console::{self, Settings, State, telemetry};
+pub use console::{self, telemetry, Settings, State};
+use futures::TryFutureExt;
 use tracing::*;
 
 #[get("/metrics")]
@@ -45,9 +46,20 @@ async fn main() -> anyhow::Result<()> {
             .service(metrics)
     })
     .bind("0.0.0.0:8080")?
-    .shutdown_timeout(5);
+    .shutdown_timeout(5)
+    .run();
 
     // Both runtimes implements graceful shutdown, so poll until both are done
-    tokio::join!(console, server.run()).1?;
-    Ok(())
+    let result = tokio::try_join!(console, server.map_err(console::Error::StdIoError));
+
+    match result {
+        Ok(_) => {
+            info!("Shutdown completed.");
+            Ok(())
+        }
+        Err(error) => {
+            error!("Failure: {}", error);
+            std::process::exit(1)
+        }
+    }
 }

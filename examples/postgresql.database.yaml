@@ -4,6 +4,7 @@ metadata:
   name: example
   namespace: default
 spec:
+  name: example
   server: localhost
   passwordSecretName: example-user
   connectionLimit: 10
@@ -14,6 +15,7 @@ metadata:
   name: example
   namespace: default
 spec:
+  name: example
   server: localhost
   ownerRef:
     name: example

@@ -38,10 +38,12 @@ use tracing::*;
     status = "UserStatus"
 )]
 pub struct UserSpec {
+    #[schemars(length(min = 3, max = 63), pattern(r"[a-z0-9._]+"))]
+    pub name: String,
     pub server: String,
     /// Name of the secret that will be created and contain the generated password.
-    pub password_secret_name: String,
-    pub connection_limit: i32,
+    pub passwordSecretName: String,
+    pub connectionLimit: i32,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, JsonSchema, Default)]
@@ -52,19 +54,11 @@ pub struct UserRef {
 #[derive(Deserialize, Serialize, Clone, Default, Debug, JsonSchema)]
 pub struct UserStatus {
     pub created: bool,
-    pub name: String,
 }
 
 impl User {
     fn was_created(&self) -> bool {
         self.status.as_ref().map(|s| s.created).unwrap_or(false)
-    }
-
-    fn name(&self) -> String {
-        let namespace = self.namespace().unwrap();
-        let name = self.name_any();
-
-        format!("{}_{}", namespace, name)
     }
 
     pub async fn reconcile(&self, ctx: Arc<Context>) -> Result<Action> {
@@ -109,9 +103,9 @@ impl User {
             .execute(
                 &format!(
                     "CREATE USER {} WITH PASSWORD '{}' CONNECTION LIMIT {}",
-                    user.name(),
+                    user.spec.name.clone(),
                     password,
-                    user.spec.connection_limit
+                    user.spec.connectionLimit
                 ),
                 &[],
             )
@@ -121,13 +115,13 @@ impl User {
 
         let secret = Secret {
             metadata: ObjectMeta {
-                name: Some(user.spec.password_secret_name.clone()),
+                name: Some(user.spec.passwordSecretName.clone()),
                 ..Default::default()
             },
             immutable: Some(true),
             string_data: Some(std::collections::BTreeMap::from([
                 ("password".to_string(), password),
-                ("username".to_string(), user.name()),
+                ("username".to_string(), user.spec.name.clone()),
                 ("host".to_string(), server_host_name),
                 ("port".to_string(), "5432".to_string()),
             ])),
@@ -158,7 +152,6 @@ impl User {
             "kind": "User",
             "status": UserStatus {
                 created : true,
-                name: user.name(),
             }
         }));
         let ps = PatchParams::apply("cntrlr").force();
@@ -199,7 +192,7 @@ impl User {
         }
 
         ctx.postgresql_clients[&user.spec.server]
-            .execute(&format!("DROP USER {}", user.name()), &[])
+            .execute(&format!("DROP USER {}", user.spec.name.clone()), &[])
             .await?;
 
         Ok(Action::await_change())
@@ -208,11 +201,17 @@ impl User {
 
 #[instrument(skip(ctx, user), fields(trace_id))]
 async fn reconcile(user: Arc<User>, ctx: Arc<Context>) -> Result<Action> {
+    let oref = user.object_ref(&());
+
     let trace_id = telemetry::get_trace_id();
     if trace_id != opentelemetry::trace::TraceId::INVALID {
         Span::current().record("trace_id", field::display(&trace_id));
     }
-    let _timer = ctx.metrics.reconcile.count_and_measure(&trace_id);
+    let _timer = ctx.metrics.reconcile.count_and_measure(
+        oref.api_version.unwrap(),
+        oref.kind.unwrap(),
+        &trace_id,
+    );
     ctx.diagnostics.write().await.last_event = Utc::now();
     let ns = user.namespace().unwrap();
     let users: Api<User> = Api::namespaced(ctx.kube_client.clone(), &ns);
@@ -230,7 +229,14 @@ async fn reconcile(user: Arc<User>, ctx: Arc<Context>) -> Result<Action> {
 
 fn error_policy(user: Arc<User>, error: &Error, ctx: Arc<Context>) -> Action {
     warn!("reconcile failed: {:?}", error);
-    ctx.metrics.reconcile.set_failure(user.name_any(), error);
+    let oref = user.object_ref(&());
+
+    ctx.metrics.reconcile.set_failure(
+        oref.api_version.unwrap(),
+        oref.kind.unwrap(),
+        user.name_any(),
+        error,
+    );
     Action::requeue(Duration::from_secs(5 * 60))
 }
 
@@ -245,7 +251,7 @@ pub async fn run(
         return Err(Error::MissingCrds);
     }
 
-    info!("Starting postgresql::user controller");
+    info!("Starting controller");
 
     Controller::new(users, Config::default().any_semantic())
         .shutdown_on_signal()

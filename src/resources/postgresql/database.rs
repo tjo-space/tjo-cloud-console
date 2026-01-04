@@ -36,9 +36,11 @@ use tracing::*;
     status = "DatabaseStatus"
 )]
 pub struct DatabaseSpec {
+    #[schemars(length(min = 3, max = 63), pattern(r"[a-z0-9._]+"))]
+    pub name: String,
     pub server: String,
-    pub connection_limit: i32,
-    pub owner_ref: UserRef,
+    pub connectionLimit: i32,
+    pub ownerRef: UserRef,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, JsonSchema, Default)]
@@ -49,19 +51,11 @@ pub struct DatabaseRef {
 #[derive(Deserialize, Serialize, Clone, Default, Debug, JsonSchema)]
 pub struct DatabaseStatus {
     pub created: bool,
-    pub name: String,
 }
 
 impl Database {
     fn was_created(&self) -> bool {
         self.status.as_ref().map(|s| s.created).unwrap_or(false)
-    }
-
-    fn name(&self) -> String {
-        let namespace = self.namespace().unwrap();
-        let name = self.name_any();
-
-        format!("{}_{}", namespace, name)
     }
 
     pub async fn reconcile(&self, ctx: Arc<Context>) -> Result<Action> {
@@ -101,10 +95,9 @@ impl Database {
         }
 
         let user: User = users
-            .get(&database.spec.owner_ref.name)
+            .get(&database.spec.ownerRef.name)
             .await
             .map_err(Error::KubeError)?;
-        let user_status = user.status.expect("User Status is not yet defined");
 
         if user.spec.server != database.spec.server {
             return Err(Error::PostgresqlUserAndDatabaseServerNotMatching);
@@ -113,10 +106,10 @@ impl Database {
         ctx.postgresql_clients[&database.spec.server]
             .execute(
                 &format!(
-                    "CREATE DATABASE '{}' WITH OWNER '{}' CONNECTION LIMIT {}",
-                    database.name(),
-                    user_status.name,
-                    database.spec.connection_limit
+                    "CREATE DATABASE {} WITH OWNER '{}' CONNECTION LIMIT {}",
+                    database.spec.name.clone(),
+                    user.spec.name,
+                    database.spec.connectionLimit
                 ),
                 &[],
             )
@@ -141,7 +134,6 @@ impl Database {
             "kind": "Database",
             "status": DatabaseStatus {
                 created : true,
-                name: database.name(),
             }
         }));
         let ps = PatchParams::apply("cntrlr").force();
@@ -182,7 +174,10 @@ impl Database {
         }
 
         ctx.postgresql_clients[&database.spec.server]
-            .execute(&format!("DROP DATABASE {}", database.name()), &[])
+            .execute(
+                &format!("DROP DATABASE {}", database.spec.name.clone()),
+                &[],
+            )
             .await?;
 
         Ok(Action::await_change())
@@ -191,13 +186,19 @@ impl Database {
 
 #[instrument(skip(ctx, database), fields(trace_id))]
 async fn reconcile(database: Arc<Database>, ctx: Arc<Context>) -> Result<Action> {
+    let oref = database.object_ref(&());
+
     let trace_id = telemetry::get_trace_id();
     if trace_id != opentelemetry::trace::TraceId::INVALID {
         Span::current().record("trace_id", field::display(&trace_id));
     }
-    let _timer = ctx.metrics.reconcile.count_and_measure(&trace_id);
+    let _timer = ctx.metrics.reconcile.count_and_measure(
+        oref.api_version.unwrap(),
+        oref.kind.unwrap(),
+        &trace_id,
+    );
     ctx.diagnostics.write().await.last_event = Utc::now();
-    let ns = database.namespace().unwrap(); // database is namespace scoped
+    let ns = database.namespace().unwrap();
     let databases: Api<Database> = Api::namespaced(ctx.kube_client.clone(), &ns);
 
     info!("Reconciling Database \"{}\" in {}", database.name_any(), ns);
@@ -213,9 +214,14 @@ async fn reconcile(database: Arc<Database>, ctx: Arc<Context>) -> Result<Action>
 
 fn error_policy(database: Arc<Database>, error: &Error, ctx: Arc<Context>) -> Action {
     warn!("reconcile failed: {:?}", error);
-    ctx.metrics
-        .reconcile
-        .set_failure(database.name_any(), error);
+    let oref = database.object_ref(&());
+
+    ctx.metrics.reconcile.set_failure(
+        oref.api_version.unwrap(),
+        oref.kind.unwrap(),
+        database.name_any(),
+        error,
+    );
     Action::requeue(Duration::from_secs(5 * 60))
 }
 
@@ -234,7 +240,7 @@ pub async fn run(
         return Err(Error::MissingCrds);
     }
 
-    info!("Starting postgresql::database controller");
+    info!("Starting controller");
 
     Controller::new(databases, Config::default().any_semantic())
         .shutdown_on_signal()

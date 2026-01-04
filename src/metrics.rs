@@ -1,5 +1,4 @@
 use crate::Error;
-use kube::ResourceExt;
 use opentelemetry::trace::TraceId;
 use prometheus_client::{
     encoding::EncodeLabelSet,
@@ -17,7 +16,7 @@ pub struct Metrics {
 
 impl Default for Metrics {
     fn default() -> Self {
-        let mut registry = Registry::with_prefix("doc_ctrl_reconcile");
+        let mut registry = Registry::with_prefix("controller");
         let reconcile = ReconcileMetrics::default().register(&mut registry);
         Self {
             registry: Arc::new(registry),
@@ -26,34 +25,17 @@ impl Default for Metrics {
     }
 }
 
-#[derive(Clone, Hash, PartialEq, Eq, EncodeLabelSet, Debug, Default)]
-pub struct TraceLabel {
-    pub trace_id: String,
-}
-impl TryFrom<&TraceId> for TraceLabel {
-    type Error = anyhow::Error;
-
-    fn try_from(id: &TraceId) -> Result<TraceLabel, Self::Error> {
-        if std::matches!(id, &TraceId::INVALID) {
-            anyhow::bail!("invalid trace id")
-        } else {
-            let trace_id = id.to_string();
-            Ok(Self { trace_id })
-        }
-    }
-}
-
 #[derive(Clone)]
 pub struct ReconcileMetrics {
-    pub runs: Counter,
+    pub runs: Family<ReconcileLabels, Counter>,
     pub failures: Family<ErrorLabels, Counter>,
-    pub duration: HistogramWithExemplars<TraceLabel>,
+    pub duration: HistogramWithExemplars<ReconcileLabels>,
 }
 
 impl Default for ReconcileMetrics {
     fn default() -> Self {
         Self {
-            runs: Counter::default(),
+            runs: Family::<ReconcileLabels, Counter>::default(),
             failures: Family::<ErrorLabels, Counter>::default(),
             duration: HistogramWithExemplars::new(
                 [0.01, 0.1, 0.25, 0.5, 1., 5., 15., 60.].into_iter(),
@@ -63,7 +45,16 @@ impl Default for ReconcileMetrics {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
+pub struct ReconcileLabels {
+    pub api_version: String,
+    pub api_kind: String,
+    pub trace_id: String,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 pub struct ErrorLabels {
+    pub api_version: String,
+    pub api_kind: String,
     pub instance: String,
     pub error: String,
 }
@@ -82,20 +73,34 @@ impl ReconcileMetrics {
         self
     }
 
-    pub fn set_failure(&self, name: String, e: &Error) {
+    pub fn set_failure(&self, api_version: String, api_kind: String, name: String, e: &Error) {
         self.failures
             .get_or_create(&ErrorLabels {
+                api_version,
+                api_kind,
                 instance: name,
                 error: e.metric_label(),
             })
             .inc();
     }
 
-    pub fn count_and_measure(&self, trace_id: &TraceId) -> ReconcileMeasurer {
-        self.runs.inc();
+    pub fn count_and_measure(
+        &self,
+        api_version: String,
+        api_kind: String,
+        trace_id: &TraceId,
+    ) -> ReconcileMeasurer {
+        let labels = &ReconcileLabels {
+            api_version,
+            api_kind,
+            trace_id: trace_id.to_string(),
+        };
+
+        self.runs.get_or_create(labels).inc();
+
         ReconcileMeasurer {
             start: Instant::now(),
-            labels: trace_id.try_into().ok(),
+            labels: labels.clone(),
             metric: self.duration.clone(),
         }
     }
@@ -106,16 +111,18 @@ impl ReconcileMetrics {
 /// Relies on Drop to calculate duration and register the observation in the histogram
 pub struct ReconcileMeasurer {
     start: Instant,
-    labels: Option<TraceLabel>,
-    metric: HistogramWithExemplars<TraceLabel>,
+    labels: ReconcileLabels,
+    metric: HistogramWithExemplars<ReconcileLabels>,
 }
 
 impl Drop for ReconcileMeasurer {
     fn drop(&mut self) {
         #[allow(clippy::cast_precision_loss)]
         let duration = self.start.elapsed().as_millis() as f64 / 1000.0;
-        let labels = self.labels.take();
-        self.metric
-            .observe(duration, labels, Some(std::time::SystemTime::now()));
+        self.metric.observe(
+            duration,
+            Some(self.labels.clone()),
+            Some(std::time::SystemTime::now()),
+        );
     }
 }

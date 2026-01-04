@@ -26,7 +26,7 @@ spec:
               name:
                 maxLength: 63
                 minLength: 3
-                pattern: '[a-z0-9.-]+'
+                pattern: '[a-z0-9.-_]+'
                 type: string
             required:
             - name
@@ -72,7 +72,7 @@ spec:
           spec:
             description: Represents a token to access bucket in s3.tjo.cloud.
             properties:
-              bucket_ref:
+              bucketRef:
                 properties:
                   name:
                     type: string
@@ -86,7 +86,7 @@ spec:
               writer:
                 type: boolean
             required:
-            - bucket_ref
+            - bucketRef
             - owner
             - reader
             - writer
@@ -132,10 +132,15 @@ spec:
           spec:
             description: Database on the postgresql.tjo.cloud database platform
             properties:
-              connection_limit:
+              connectionLimit:
                 format: int32
                 type: integer
-              owner_ref:
+              name:
+                maxLength: 63
+                minLength: 3
+                pattern: '[a-z0-9._]+'
+                type: string
+              ownerRef:
                 properties:
                   name:
                     type: string
@@ -145,8 +150,9 @@ spec:
               server:
                 type: string
             required:
-            - connection_limit
-            - owner_ref
+            - connectionLimit
+            - name
+            - ownerRef
             - server
             type: object
           status:
@@ -154,11 +160,8 @@ spec:
             properties:
               created:
                 type: boolean
-              name:
-                type: string
             required:
             - created
-            - name
             type: object
         required:
         - spec
@@ -193,17 +196,23 @@ spec:
           spec:
             description: User on the postgresql.tjo.cloud database platform
             properties:
-              connection_limit:
+              connectionLimit:
                 format: int32
                 type: integer
-              password_secret_name:
+              name:
+                maxLength: 63
+                minLength: 3
+                pattern: '[a-z0-9._]+'
+                type: string
+              passwordSecretName:
                 description: Name of the secret that will be created and contain the generated password.
                 type: string
               server:
                 type: string
             required:
-            - connection_limit
-            - password_secret_name
+            - connectionLimit
+            - name
+            - passwordSecretName
             - server
             type: object
           status:
@@ -211,11 +220,8 @@ spec:
             properties:
               created:
                 type: boolean
-              name:
-                type: string
             required:
             - created
-            - name
             type: object
         required:
         - spec

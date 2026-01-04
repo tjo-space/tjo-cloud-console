@@ -16,7 +16,8 @@ use serde::{Deserialize, Serialize};
     status = "TokenStatus"
 )]
 pub struct TokenSpec {
-    pub bucket_ref: BucketRef,
+    #[allow(non_snake_case)]
+    pub bucketRef: BucketRef,
     pub reader: bool,
     pub writer: bool,
     pub owner: bool,

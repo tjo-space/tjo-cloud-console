@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
     status = "BucketStatus"
 )]
 pub struct BucketSpec {
-    #[schemars(length(min = 3, max = 63), pattern(r"[a-z0-9.-]+"))]
+    #[schemars(length(min = 3, max = 63), pattern(r"[a-z0-9.-_]+"))]
     pub name: String,
 }
 

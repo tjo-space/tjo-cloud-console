@@ -7,7 +7,7 @@ use std::sync::Arc;
 pub static FINALIZER: &str = "console.tjo.cloud";
 
 /// Initialize the controller and shared state (given the crd is installed)
-pub async fn run(state: State) {
+pub async fn run(state: State) -> Result<(), Error> {
     let kube_client = Client::try_default()
         .await
         .expect("failed to create kube Client");
@@ -33,7 +33,7 @@ pub async fn run(state: State) {
 
     let postgresql_clients = Arc::new(postgresql_clients);
 
-    tokio::try_join!(
+    match tokio::try_join!(
         resources::postgresql::database::run(
             state.clone(),
             kube_client.clone(),
@@ -44,6 +44,8 @@ pub async fn run(state: State) {
             kube_client.clone(),
             postgresql_clients.clone(),
         )
-    )
-    .expect("controller failed");
+    ) {
+        Ok((_, _)) => Ok(()),
+        Err(err) => Err(err),
+    }
 }

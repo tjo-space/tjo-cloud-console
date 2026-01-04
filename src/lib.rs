@@ -40,6 +40,9 @@ pub enum Error {
 
     #[error("PostgresqlUserAndDatabaseServerNotMatching")]
     PostgresqlUserAndDatabaseServerNotMatching,
+
+    #[error("StdIoError")]
+    StdIoError(#[from] std::io::Error),
 }
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
