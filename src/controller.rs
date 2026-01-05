@@ -33,16 +33,33 @@ pub async fn run(state: State) -> Result<(), Error> {
 
     let postgresql_clients = Arc::new(postgresql_clients);
 
+    let garage_client = Arc::new(
+        resources::s3::connect(
+            state.settings().s3().address.clone(),
+            state.settings().s3().token.clone(),
+        )
+        .await
+        .expect("failed to create garage client"),
+    );
+
     match tokio::try_join!(
         resources::postgresql::database::run(
-            state.clone(),
+            state
+                .to_context(kube_client.clone(), postgresql_clients, garage_client)
+                .await,
             kube_client.clone(),
-            postgresql_clients.clone(),
         ),
         resources::postgresql::user::run(
-            state.clone(),
+            state
+                .to_context(kube_client.clone(), postgresql_clients, garage_client)
+                .await,
             kube_client.clone(),
-            postgresql_clients.clone(),
+        ),
+        resouress::s3::token::run(
+            state
+                .to_context(kube_client.clone(), postgresql_clients, garage_client)
+                .await,
+            kube_client.clone(),
         )
     ) {
         Ok((_, _)) => Ok(()),

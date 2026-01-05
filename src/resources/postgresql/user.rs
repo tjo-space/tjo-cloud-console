@@ -1,7 +1,4 @@
-use crate::{
-    resources::postgresql::Client as PostgresqlClient, telemetry, Context, Error, Result, State,
-    FINALIZER,
-};
+use crate::{telemetry, Context, Error, Result, FINALIZER};
 use chrono::Utc;
 use futures::StreamExt;
 use k8s_openapi::api::core::v1::Secret;
@@ -21,7 +18,6 @@ use rand::distr::{Alphanumeric, SampleString};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::time::Duration;
 use tracing::*;
@@ -241,11 +237,7 @@ fn error_policy(user: Arc<User>, error: &Error, ctx: Arc<Context>) -> Action {
 }
 
 /// Initialize the controller and shared state (given the crd is installed)
-pub async fn run(
-    state: State,
-    kube_client: KubeClient,
-    postgresql_clients: Arc<HashMap<String, PostgresqlClient>>,
-) -> Result<(), Error> {
+pub async fn run(context: Arc<Context>, kube_client: KubeClient) -> Result<(), Error> {
     let users = Api::<User>::all(kube_client.clone());
     if users.list(&ListParams::default().limit(1)).await.is_err() {
         return Err(Error::MissingCrds);
@@ -255,11 +247,7 @@ pub async fn run(
 
     Controller::new(users, Config::default().any_semantic())
         .shutdown_on_signal()
-        .run(
-            reconcile,
-            error_policy,
-            state.to_context(kube_client, postgresql_clients).await,
-        )
+        .run(reconcile, error_policy, context)
         .filter_map(|x| async move { std::result::Result::ok(x) })
         .for_each(|_| futures::future::ready(()))
         .await;

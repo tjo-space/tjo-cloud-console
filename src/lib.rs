@@ -43,6 +43,9 @@ pub enum Error {
 
     #[error("StdIoError")]
     StdIoError(#[from] std::io::Error),
+
+    #[error("GarageClientError")]
+    GarageClientError(#[from] crate::garage::Error),
 }
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
@@ -77,3 +80,7 @@ pub use state::*;
 /// Context
 mod context;
 pub use context::*;
+
+/// Garage Client
+mod garage;
+pub use garage::*;

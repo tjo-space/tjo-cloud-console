@@ -1,4 +1,6 @@
-use crate::{resources::postgresql::Client as PostgresqlClient, Context, Metrics, Settings};
+use crate::{
+    resources::postgresql::Client as PostgresqlClient, Context, GarageClient, Metrics, Settings,
+};
 use chrono::{DateTime, Utc};
 use kube::{
     client::Client as KubeClient,
@@ -75,7 +77,7 @@ impl State {
         &self,
         kube_client: KubeClient,
         postgresql_clients: Arc<HashMap<String, PostgresqlClient>>,
-        //s3Clients: todo,
+        garage_client: Arc<GarageClient>,
     ) -> Arc<Context> {
         Arc::new(Context {
             kube_client: kube_client.clone(),
@@ -83,6 +85,7 @@ impl State {
             metrics: self.metrics.clone(),
             diagnostics: self.diagnostics.clone(),
             settings: self.settings.clone(),
+            garage_client,
             postgresql_clients,
         })
     }

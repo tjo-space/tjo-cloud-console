@@ -26,5 +26,6 @@ pub struct BucketRef {
 
 #[derive(Deserialize, Serialize, Clone, Default, Debug, JsonSchema)]
 pub struct BucketStatus {
+    pub id: String,
     pub created: bool,
 }

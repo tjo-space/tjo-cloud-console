@@ -1,4 +1,6 @@
-use crate::{resources::postgresql::Client as PostgresqlClient, Diagnostics, Metrics, Settings};
+use crate::{
+    resources::postgresql::Client as PostgresqlClient, Diagnostics, GarageClient, Metrics, Settings,
+};
 use kube::runtime::events::Recorder;
 use kube::Client as KubeClient;
 use std::collections::HashMap;
@@ -20,4 +22,6 @@ pub struct Context {
     pub settings: Arc<Settings>,
     /// Postgresql Clients
     pub postgresql_clients: Arc<HashMap<String, PostgresqlClient>>,
+    /// Garage Client
+    pub garage_client: Arc<GarageClient>,
 }
