@@ -5,6 +5,7 @@ use k8s_openapi::api::core::v1::Secret;
 use kube::{
     api::{Api, ListParams, Patch, PatchParams, ResourceExt},
     client::Client as KubeClient,
+    core::object::HasSpec,
     core::ObjectMeta,
     runtime::{
         controller::{Action, Controller},
@@ -87,37 +88,35 @@ impl User {
             return Err(Error::PostgresqlIllegalUser);
         }
 
-        let user: User = users.get(&name).await.map_err(Error::KubeError)?;
-
-        if !ctx.postgresql_clients.contains_key(&user.spec.server) {
+        if !ctx.postgresql_clients.contains_key(&self.spec().server) {
             return Err(Error::PostgresqlUnknownServer);
         }
 
         let password = Alphanumeric.sample_string(&mut rand::rng(), 16);
 
-        ctx.postgresql_clients[&user.spec.server]
+        ctx.postgresql_clients[&self.spec().server]
             .execute(
                 &format!(
                     "CREATE USER {} WITH PASSWORD '{}' CONNECTION LIMIT {}",
-                    user.spec.name.clone(),
+                    self.spec().name.clone(),
                     password,
-                    user.spec.connectionLimit
+                    self.spec().connectionLimit
                 ),
                 &[],
             )
             .await?;
 
-        let server_host_name = ctx.settings.postgresql[&user.spec.server].host.clone();
+        let server_host_name = ctx.settings.postgresql[&self.spec().server].host.clone();
 
         let secret = Secret {
             metadata: ObjectMeta {
-                name: Some(user.spec.passwordSecretName.clone()),
+                name: Some(self.spec().passwordSecretName.clone()),
                 ..Default::default()
             },
             immutable: Some(true),
             string_data: Some(std::collections::BTreeMap::from([
                 ("password".to_string(), password),
-                ("username".to_string(), user.spec.name.clone()),
+                ("username".to_string(), self.spec().name.clone()),
                 ("host".to_string(), server_host_name),
                 ("port".to_string(), "5432".to_string()),
             ])),
@@ -161,18 +160,15 @@ impl User {
     }
 
     pub async fn cleanup(&self, ctx: Arc<Context>) -> Result<Action> {
-        let client = ctx.kube_client.clone();
         let oref = self.object_ref(&());
-        let ns = self.namespace().unwrap();
         let name = self.name_any();
-        let users: Api<User> = Api::namespaced(client, &ns);
 
         ctx.recorder
             .publish(
                 &Event {
                     type_: EventType::Normal,
                     reason: "DeleteRequested".into(),
-                    note: Some(format!("Dropping user for `{}`", self.name_any())),
+                    note: Some(format!("Dropping user for `{}`", name)),
                     action: "Deleting".into(),
                     secondary: None,
                 },
@@ -181,14 +177,12 @@ impl User {
             .await
             .map_err(Error::KubeError)?;
 
-        let user: User = users.get(&name).await.map_err(Error::KubeError)?;
-
-        if !ctx.postgresql_clients.contains_key(&user.spec.server) {
+        if !ctx.postgresql_clients.contains_key(&self.spec().server) {
             return Err(Error::PostgresqlUnknownServer);
         }
 
-        ctx.postgresql_clients[&user.spec.server]
-            .execute(&format!("DROP USER {}", user.spec.name.clone()), &[])
+        ctx.postgresql_clients[&self.spec().server]
+            .execute(&format!("DROP USER {}", self.spec().name.clone()), &[])
             .await?;
 
         Ok(Action::await_change())

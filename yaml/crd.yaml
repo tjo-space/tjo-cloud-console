@@ -36,8 +36,11 @@ spec:
             properties:
               created:
                 type: boolean
+              id:
+                type: string
             required:
             - created
+            - id
             type: object
         required:
         - spec
@@ -79,16 +82,22 @@ spec:
                 required:
                 - name
                 type: object
+              name:
+                type: string
               owner:
                 type: boolean
               reader:
                 type: boolean
+              tokenSecretName:
+                type: string
               writer:
                 type: boolean
             required:
             - bucketRef
+            - name
             - owner
             - reader
+            - tokenSecretName
             - writer
             type: object
           status:
@@ -96,8 +105,11 @@ spec:
             properties:
               created:
                 type: boolean
+              id:
+                type: string
             required:
             - created
+            - id
             type: object
         required:
         - spec

@@ -1,5 +1,5 @@
 s3:
-  address: "localhost:3903"
+  url: "http://localhost:3903"
   token: "5lVvod7yaZM7MtMRJ32Jd8VssQ01ehj1xVaEnikqhxg="
 
 postgresql:

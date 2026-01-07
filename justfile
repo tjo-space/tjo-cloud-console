@@ -44,11 +44,18 @@ format:
   @cargo fmt
 
 env-up:
-  @kind create cluster
-  @kubectx kind-kind
-  @docker compose up -d
-  @just crd-apply
-  @docker compose logs --follow
+  #/usr/bin/env bash
+  kind create cluster
+  kubectx kind-kind
+  docker compose up -d
+
+  # Setup Garage node
+  NODE_ID=$(docker compose exec garage /garage node id --quiet | cut -d "@" -f 1)
+  docker compose exec garage /garage layout assign -z docker -c 1G ${NODE_ID}
+  docker compose exec garage /garage layout apply --version 1
+
+  just crd-apply
+  docker compose logs --follow
 
 env-down:
   @kind delete cluster

@@ -7,6 +7,7 @@ use futures::StreamExt;
 use kube::{
     api::{Api, ListParams, Patch, PatchParams, ResourceExt},
     client::Client as KubeClient,
+    core::object::HasSpec,
     runtime::{
         controller::{Action, Controller},
         events::{Event, EventType},
@@ -18,6 +19,7 @@ use kube::{
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::sync::Arc;
 use tokio::time::Duration;
 use tracing::*;
 
@@ -85,28 +87,26 @@ impl Database {
             return Err(Error::PostgresqlIllegalDatabase);
         }
 
-        let database: Database = databases.get(&name).await.map_err(Error::KubeError)?;
-
-        if !ctx.postgresql_clients.contains_key(&database.spec.server) {
+        if !ctx.postgresql_clients.contains_key(&self.spec().server) {
             return Err(Error::PostgresqlUnknownServer);
         }
 
         let user: User = users
-            .get(&database.spec.ownerRef.name)
+            .get(&self.spec().ownerRef.name)
             .await
             .map_err(Error::KubeError)?;
 
-        if user.spec.server != database.spec.server {
+        if user.spec.server != self.spec().server {
             return Err(Error::PostgresqlUserAndDatabaseServerNotMatching);
         }
 
-        ctx.postgresql_clients[&database.spec.server]
+        ctx.postgresql_clients[&self.spec().server]
             .execute(
                 &format!(
                     "CREATE DATABASE {} WITH OWNER '{}' CONNECTION LIMIT {}",
-                    database.spec.name.clone(),
+                    self.spec().name.clone(),
                     user.spec.name,
-                    database.spec.connectionLimit
+                    self.spec().connectionLimit
                 ),
                 &[],
             )
@@ -144,18 +144,15 @@ impl Database {
     }
 
     pub async fn cleanup(&self, ctx: Arc<Context>) -> Result<Action> {
-        let client = ctx.kube_client.clone();
         let oref = self.object_ref(&());
-        let ns = self.namespace().unwrap();
         let name = self.name_any();
-        let databases: Api<Database> = Api::namespaced(client, &ns);
 
         ctx.recorder
             .publish(
                 &Event {
                     type_: EventType::Normal,
                     reason: "DeleteRequested".into(),
-                    note: Some(format!("Dropping database for `{}`", self.name_any())),
+                    note: Some(format!("Dropping database for `{}`", name)),
                     action: "Deleting".into(),
                     secondary: None,
                 },
@@ -164,17 +161,12 @@ impl Database {
             .await
             .map_err(Error::KubeError)?;
 
-        let database: Database = databases.get(&name).await.map_err(Error::KubeError)?;
-
-        if !ctx.postgresql_clients.contains_key(&database.spec.server) {
+        if !ctx.postgresql_clients.contains_key(&self.spec().server) {
             return Err(Error::PostgresqlUnknownServer);
         }
 
-        ctx.postgresql_clients[&database.spec.server]
-            .execute(
-                &format!("DROP DATABASE {}", database.spec.name.clone()),
-                &[],
-            )
+        ctx.postgresql_clients[&self.spec().server]
+            .execute(&format!("DROP DATABASE {}", self.spec().name.clone()), &[])
             .await?;
 
         Ok(Action::await_change())

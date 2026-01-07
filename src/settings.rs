@@ -14,7 +14,7 @@ pub struct Postgresql {
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
 pub struct S3 {
-    pub address: String,
+    pub url: String,
     pub token: String,
 }
 

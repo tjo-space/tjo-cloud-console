@@ -4,9 +4,12 @@ use crate::{
 };
 use chrono::Utc;
 use futures::StreamExt;
+use k8s_openapi::api::core::v1::Secret;
 use kube::{
     api::{Api, ListParams, Patch, PatchParams, ResourceExt},
     client::Client as KubeClient,
+    core::object::HasSpec,
+    core::ObjectMeta,
     runtime::{
         controller::{Action, Controller},
         events::{Event, EventType},
@@ -37,6 +40,8 @@ use tracing::*;
 pub struct TokenSpec {
     #[allow(non_snake_case)]
     pub bucketRef: BucketRef,
+    pub tokenSecretName: String,
+    pub name: String,
     pub reader: bool,
     pub writer: bool,
     pub owner: bool,
@@ -61,11 +66,13 @@ impl Token {
     }
 
     pub async fn reconcile(&self, ctx: Arc<Context>) -> Result<Action> {
+        let garage_client = ctx.garage_client.clone();
         let oref = self.object_ref(&());
         let namespace = self.namespace().unwrap();
         let name = self.name_any();
         let tokens: Api<Token> = Api::namespaced(ctx.kube_client.clone(), &namespace);
         let buckets: Api<Bucket> = Api::namespaced(ctx.kube_client.clone(), &namespace);
+        let secrets: Api<Secret> = Api::namespaced(ctx.kube_client.clone(), &namespace);
 
         // If was already created, do nothing.
         if self.was_created() {
@@ -86,7 +93,28 @@ impl Token {
             .await
             .map_err(Error::KubeError)?;
 
-        // TODO: Implement api call
+        let key = garage_client
+            .create_key(self.spec().name.clone())
+            .await
+            .map_err(Error::GarageClientError)?;
+
+        let secret = Secret {
+            metadata: ObjectMeta {
+                name: Some(self.spec().tokenSecretName.clone()),
+                ..Default::default()
+            },
+            immutable: Some(true),
+            string_data: Some(std::collections::BTreeMap::from([
+                ("accessKeyId".to_string(), key.id.clone()),
+                ("secretAccessKey".to_string(), key.secret.clone()),
+            ])),
+            ..Default::default()
+        };
+
+        secrets
+            .create(&kube::api::PostParams::default(), &secret)
+            .await
+            .map_err(Error::KubeError)?;
 
         ctx.recorder
             .publish(
@@ -107,7 +135,7 @@ impl Token {
             "kind": "Token",
             "status": TokenStatus {
                 created : true,
-                id : "TODO".to_string(),
+                id : key.id,
             }
         }));
         let ps = PatchParams::apply("cntrlr").force();

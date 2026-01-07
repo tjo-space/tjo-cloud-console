@@ -28,6 +28,9 @@ async fn index(c: Data<State>, _req: HttpRequest) -> impl Responder {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     telemetry::init().await;
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install rustls crypto provider");
 
     // Read settings
     let settings = Settings::new().unwrap();

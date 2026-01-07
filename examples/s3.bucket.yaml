@@ -3,4 +3,19 @@ apiVersion: s3.tjo.cloud/v1
 metadata:
   name: example
   namespace: default
-spec: {}
+spec:
+  name: "example"
+---
+kind: Token
+apiVersion: s3.tjo.cloud/v1
+metadata:
+  name: example
+  namespace: default
+spec:
+    bucketRef:
+      name: "example"
+    tokenSecretName: "s3-token"
+    name: "example"
+    reader: true
+    writer: true
+    owner: true

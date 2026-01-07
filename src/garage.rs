@@ -1,30 +1,23 @@
-use awc::http::header;
-use awc::http::StatusCode;
+use reqwest::{header, redirect, Client, StatusCode};
 use serde::Deserialize;
 use serde_json::json;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-#[error(transparent)]
 pub enum Error {
-    #[error("StdIoError: {0}")]
-    StdIoError(#[from] std::io::Error),
+    #[error("Request: {0}")]
+    Request(reqwest::Error),
 
-    #[error("RequestError: {0}")]
-    RequestError(String),
-
-    #[error("WrongResponseError: {0}")]
-    WrongResponseError(#[from] awc::error::JsonPayloadError),
-
-    #[error("BadStatusCodeError: {0}")]
-    BadStatusCodeError(StatusCode),
+    #[error("BadStatusCode: {0}")]
+    BadStatusCode(StatusCode),
 }
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Clone)]
 pub struct GarageClient {
     token: String,
-    address: String,
+    url: String,
+    http_client: Client,
 }
 
 #[derive(Deserialize)]
@@ -53,18 +46,32 @@ enum PermissionKind {
     Deny,
 }
 
-impl GarageClient {
-    pub fn new(address: String, token: String) -> GarageClient {
-        GarageClient { token, address }
-    }
+static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
 
-    fn http_client(&self) -> awc::Client {
-        awc::ClientBuilder::new()
-            .disable_redirects()
-            .add_default_header((header::AUTHORIZATION, format!("Bearer {0}", self.token)))
-            .add_default_header((header::CONTENT_TYPE, "application/json"))
-            .add_default_header((header::ACCEPT, "application/json"))
-            .finish()
+impl GarageClient {
+    pub fn new(url: String, token: String) -> Result<GarageClient, Error> {
+        let mut headers = header::HeaderMap::new();
+        headers.insert(
+            "Content-Type",
+            header::HeaderValue::from_static("application/json"),
+        );
+        headers.insert(
+            "Accept",
+            header::HeaderValue::from_static("application/json"),
+        );
+
+        let http_client = reqwest::ClientBuilder::new()
+            .user_agent(USER_AGENT)
+            .default_headers(headers)
+            .redirect(redirect::Policy::none())
+            .build()
+            .map_err(Error::Request)?;
+
+        Ok(GarageClient {
+            token,
+            url,
+            http_client,
+        })
     }
 
     pub async fn create_bucket(&self, global_alias: String) -> Result<Bucket, Error> {
@@ -74,29 +81,11 @@ impl GarageClient {
         });
 
         let response = self
-            .http_client()
-            .post(format!("{0}/v2/CreateBucket", self.address))
-            .send_json(&body)
-            .await;
-
-        match response {
-            Ok(mut res) => {
-                let status_code = res.status();
-                if !status_code.is_success() {
-                    return Err(Error::BadStatusCodeError(status_code));
-                }
-                res.json::<Bucket>()
-                    .await
-                    .map_err(Error::WrongResponseError)
-            }
-            Err(err) => Err(Error::RequestError(err.to_string())),
-        }
-    }
-
-    pub async fn delete_bucket(&self, id: String) -> Result<(), Error> {
-        let response = self
-            .http_client()
-            .post(format!("{0}/v2/DeleteBucket?id={1}", self.address, id))
+            .http_client
+            .clone()
+            .post(format!("{0}/v2/CreateBucket", self.url))
+            .bearer_auth(self.token.clone())
+            .json(&body)
             .send()
             .await;
 
@@ -104,11 +93,32 @@ impl GarageClient {
             Ok(res) => {
                 let status_code = res.status();
                 if !status_code.is_success() {
-                    return Err(Error::BadStatusCodeError(status_code));
+                    return Err(Error::BadStatusCode(status_code));
+                }
+                res.json::<Bucket>().await.map_err(Error::Request)
+            }
+            Err(err) => Err(Error::Request(err)),
+        }
+    }
+
+    pub async fn delete_bucket(&self, id: String) -> Result<(), Error> {
+        let response = self
+            .http_client
+            .clone()
+            .post(format!("{0}/v2/DeleteBucket?id={1}", self.url, id))
+            .bearer_auth(self.token.clone())
+            .send()
+            .await;
+
+        match response {
+            Ok(res) => {
+                let status_code = res.status();
+                if !status_code.is_success() {
+                    return Err(Error::BadStatusCode(status_code));
                 }
                 Ok(())
             }
-            Err(err) => Err(Error::RequestError(err.to_string())),
+            Err(err) => Err(Error::Request(err)),
         }
     }
 
@@ -125,27 +135,11 @@ impl GarageClient {
         });
 
         let response = self
-            .http_client()
-            .post(format!("{0}/v2/CreateBucket", self.address))
-            .send_json(&body)
-            .await;
-
-        match response {
-            Ok(mut res) => {
-                let status_code = res.status();
-                if !status_code.is_success() {
-                    return Err(Error::BadStatusCodeError(status_code));
-                }
-                res.json::<Key>().await.map_err(Error::WrongResponseError)
-            }
-            Err(err) => Err(Error::RequestError(err.to_string())),
-        }
-    }
-
-    pub async fn delete_key(&self, id: String) -> Result<(), Error> {
-        let response = self
-            .http_client()
-            .post(format!("{0}/v2/DeleteKey?id={1}", self.address, id))
+            .http_client
+            .clone()
+            .post(format!("{0}/v2/CreateBucket", self.url))
+            .bearer_auth(self.token.clone())
+            .json(&body)
             .send()
             .await;
 
@@ -153,11 +147,32 @@ impl GarageClient {
             Ok(res) => {
                 let status_code = res.status();
                 if !status_code.is_success() {
-                    return Err(Error::BadStatusCodeError(status_code));
+                    return Err(Error::BadStatusCode(status_code));
+                }
+                res.json::<Key>().await.map_err(Error::Request)
+            }
+            Err(err) => Err(Error::Request(err)),
+        }
+    }
+
+    pub async fn delete_key(&self, id: String) -> Result<(), Error> {
+        let response = self
+            .http_client
+            .clone()
+            .post(format!("{0}/v2/DeleteKey?id={1}", self.url, id))
+            .bearer_auth(self.token.clone())
+            .send()
+            .await;
+
+        match response {
+            Ok(res) => {
+                let status_code = res.status();
+                if !status_code.is_success() {
+                    return Err(Error::BadStatusCode(status_code));
                 }
                 Ok(())
             }
-            Err(err) => Err(Error::RequestError(err.to_string())),
+            Err(err) => Err(Error::Request(err)),
         }
     }
 
@@ -184,20 +199,23 @@ impl GarageClient {
         };
 
         let response = self
-            .http_client()
-            .post(format!("{0}/v2/{1}", self.address, path))
-            .send_json(&body)
+            .http_client
+            .clone()
+            .post(format!("{0}/v2/{1}", self.url, path))
+            .bearer_auth(self.token.clone())
+            .json(&body)
+            .send()
             .await;
 
         match response {
             Ok(res) => {
                 let status_code = res.status();
                 if !status_code.is_success() {
-                    return Err(Error::BadStatusCodeError(status_code));
+                    return Err(Error::BadStatusCode(status_code));
                 }
                 Ok(())
             }
-            Err(err) => Err(Error::RequestError(err.to_string())),
+            Err(err) => Err(Error::Request(err)),
         }
     }
 

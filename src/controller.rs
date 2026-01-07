@@ -1,4 +1,4 @@
-use crate::{resources, Error, State};
+use crate::{resources, Error, GarageClient, State};
 use futures::future::try_join_all;
 use kube::client::Client;
 use std::collections::HashMap;
@@ -34,35 +34,46 @@ pub async fn run(state: State) -> Result<(), Error> {
     let postgresql_clients = Arc::new(postgresql_clients);
 
     let garage_client = Arc::new(
-        resources::s3::connect(
-            state.settings().s3().address.clone(),
+        GarageClient::new(
+            state.settings().s3().url.clone(),
             state.settings().s3().token.clone(),
         )
-        .await
         .expect("failed to create garage client"),
     );
 
     match tokio::try_join!(
         resources::postgresql::database::run(
             state
-                .to_context(kube_client.clone(), postgresql_clients, garage_client)
+                .to_context(
+                    kube_client.clone(),
+                    postgresql_clients.clone(),
+                    garage_client.clone()
+                )
                 .await,
             kube_client.clone(),
         ),
         resources::postgresql::user::run(
             state
-                .to_context(kube_client.clone(), postgresql_clients, garage_client)
+                .to_context(
+                    kube_client.clone(),
+                    postgresql_clients.clone(),
+                    garage_client.clone()
+                )
                 .await,
             kube_client.clone(),
         ),
-        resouress::s3::token::run(
+        resources::s3::token::run(
             state
-                .to_context(kube_client.clone(), postgresql_clients, garage_client)
+                .to_context(
+                    kube_client.clone(),
+                    postgresql_clients.clone(),
+                    garage_client.clone()
+                )
                 .await,
             kube_client.clone(),
         )
     ) {
-        Ok((_, _)) => Ok(()),
+        Ok((_, _, _)) => Ok(()),
         Err(err) => Err(err),
     }
 }
