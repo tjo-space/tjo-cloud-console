@@ -71,9 +71,19 @@ pub async fn run(state: State) -> Result<(), Error> {
                 )
                 .await,
             kube_client.clone(),
+        ),
+        resources::s3::bucket::run(
+            state
+                .to_context(
+                    kube_client.clone(),
+                    postgresql_clients.clone(),
+                    garage_client.clone()
+                )
+                .await,
+            kube_client.clone(),
         )
     ) {
-        Ok((_, _, _)) => Ok(()),
+        Ok((_, _, _, _)) => Ok(()),
         Err(err) => Err(err),
     }
 }

@@ -111,6 +111,7 @@ impl User {
         let secret = Secret {
             metadata: ObjectMeta {
                 name: Some(self.spec().passwordSecretName.clone()),
+                owner_references: Some(self.owner_ref(&()).into_iter().collect()),
                 ..Default::default()
             },
             immutable: Some(true),

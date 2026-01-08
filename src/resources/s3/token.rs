@@ -1,6 +1,6 @@
 use crate::{
     resources::s3::bucket::{Bucket, BucketRef},
-    telemetry, Context, Error, Result, FINALIZER,
+    telemetry, BucketPermissions, Context, Error, Result, FINALIZER,
 };
 use chrono::Utc;
 use futures::StreamExt;
@@ -101,6 +101,7 @@ impl Token {
         let secret = Secret {
             metadata: ObjectMeta {
                 name: Some(self.spec().tokenSecretName.clone()),
+                owner_references: Some(self.owner_ref(&()).into_iter().collect()),
                 ..Default::default()
             },
             immutable: Some(true),
@@ -115,6 +116,25 @@ impl Token {
             .create(&kube::api::PostParams::default(), &secret)
             .await
             .map_err(Error::KubeError)?;
+
+        let bucket = buckets
+            .get(&self.spec().bucketRef.name)
+            .await
+            .map_err(Error::KubeError)?;
+
+        garage_client
+            .clone()
+            .set_bucket_permissions(
+                bucket.get_id(),
+                key.id.clone(),
+                BucketPermissions {
+                    read: self.spec().reader,
+                    write: self.spec().writer,
+                    owner: self.spec().owner,
+                },
+            )
+            .await
+            .map_err(Error::GarageClientError)?;
 
         ctx.recorder
             .publish(

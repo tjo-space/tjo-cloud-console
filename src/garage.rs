@@ -77,7 +77,6 @@ impl GarageClient {
     pub async fn create_bucket(&self, global_alias: String) -> Result<Bucket, Error> {
         let body = json!({
             "global_alias" : global_alias,
-            "localAlias" : {}
         });
 
         let response = self
@@ -137,7 +136,7 @@ impl GarageClient {
         let response = self
             .http_client
             .clone()
-            .post(format!("{0}/v2/CreateBucket", self.url))
+            .post(format!("{0}/v2/CreateKey", self.url))
             .bearer_auth(self.token.clone())
             .json(&body)
             .send()

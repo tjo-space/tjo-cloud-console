@@ -1,6 +1,3 @@
-# Always use nix environment to run commands.
-set shell := ["nix", "develop", "--command", "bash", "-c"]
-
 default:
   @just --list
 
@@ -43,15 +40,18 @@ format:
   @cargo clippy --fix
   @cargo fmt
 
-env-up:
-  #/usr/bin/env bash
+env-up: env-down
+  #!/usr/bin/env bash
   kind create cluster
   kubectx kind-kind
   docker compose up -d
 
+  # Wait for Garage node to be ready
+  while ! docker compose exec garage /garage node id --quiet &>/dev/null; do sleep 1; done
+
   # Setup Garage node
   NODE_ID=$(docker compose exec garage /garage node id --quiet | cut -d "@" -f 1)
-  docker compose exec garage /garage layout assign -z docker -c 1G ${NODE_ID}
+  docker compose exec garage /garage layout assign -z docker -c 1G $NODE_ID
   docker compose exec garage /garage layout apply --version 1
 
   just crd-apply
