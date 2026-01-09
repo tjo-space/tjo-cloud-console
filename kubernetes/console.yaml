@@ -17,11 +17,13 @@ data:
         user: "svc-console-tjo-cloud"
         # password is in secret
         sslmode: "require"
+        database: "postgres"
       nevaroo-one:
         host: "nevaroo-one.postgresql.tjo.cloud"
         user: "svc-console-tjo-cloud"
         # password is in secret
         sslmode: "require"
+        database: "postgres"
 ---
 apiVersion: apps/v1
 kind: Deployment

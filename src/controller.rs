@@ -1,4 +1,4 @@
-use crate::{Error, GarageClient, State, resources};
+use crate::{resources, Error, GarageClient, State};
 use futures::future::try_join_all;
 use kube::client::Client;
 use std::collections::HashMap;
@@ -21,6 +21,7 @@ pub async fn run(state: State) -> Result<(), Error> {
                 v.user.clone(),
                 v.password.clone(),
                 v.sslmode.clone(),
+                v.database.clone(),
             )
             .await?;
 

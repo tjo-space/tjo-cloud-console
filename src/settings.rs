@@ -9,6 +9,7 @@ pub struct Postgresql {
     pub user: String,
     pub password: String,
     pub sslmode: String,
+    pub database: String,
 }
 
 #[derive(Debug, Deserialize)]
