@@ -16,12 +16,12 @@ data:
         host: "endor-one.postgresql.tjo.cloud"
         user: "svc-console-tjo-cloud"
         # password is in secret
-        sslmode: "verify-full"
+        sslmode: "require"
       nevaroo-one:
         host: "nevaroo-one.postgresql.tjo.cloud"
         user: "svc-console-tjo-cloud"
         # password is in secret
-        sslmode: "verify-full"
+        sslmode: "require"
 ---
 apiVersion: apps/v1
 kind: Deployment
