@@ -20,9 +20,7 @@ pub async fn connect(
     let connector = MakeTlsConnector::new(connector);
 
     let (client, connection) = tokio_postgres::connect(
-        &format!(
-            "host={host} user={user} password={password} database={database} sslmode={sslmode}",
-        ),
+        &format!("postgresql://{user}:{password}@{host}/{database}?sslmode={sslmode}",),
         connector.clone(),
     )
     .await?;
