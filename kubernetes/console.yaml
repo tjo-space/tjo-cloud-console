@@ -49,7 +49,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: console
-          image: code.tjo.space/tjo-cloud/console:0.1.0-c0725e4
+          image: code.tjo.space/tjo-cloud/console:0.1.0-accb174
           ports:
             - containerPort: 8080
               name: http
