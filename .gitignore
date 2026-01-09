@@ -2,3 +2,6 @@
 
 target
 dist
+
+*secret.yaml
+kubernetes/.*yaml*

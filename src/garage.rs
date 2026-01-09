@@ -1,4 +1,4 @@
-use reqwest::{header, redirect, Client, StatusCode};
+use reqwest::{Client, StatusCode, header, redirect};
 use serde::Deserialize;
 use serde_json::json;
 use thiserror::Error;

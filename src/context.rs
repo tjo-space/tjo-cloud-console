@@ -1,8 +1,8 @@
 use crate::{
-    resources::postgresql::Client as PostgresqlClient, Diagnostics, GarageClient, Metrics, Settings,
+    Diagnostics, GarageClient, Metrics, Settings, resources::postgresql::Client as PostgresqlClient,
 };
-use kube::runtime::events::Recorder;
 use kube::Client as KubeClient;
+use kube::runtime::events::Recorder;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;

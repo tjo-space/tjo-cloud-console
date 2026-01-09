@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: console
+  labels:
+    app.kubernetes.io/name: console
+    app.kubernetes.io/part-of: console-tjo-cloud
+data:
+  settings.yaml: |
+    s3:
+      url: "https://api.s3.tjo.cloud"
+      # token is in secret
+
+    postgresql:
+      endor-one:
+        host: "endor-one.postgresql.tjo.cloud"
+        user: "svc-console-tjo-cloud"
+        # password is in secret
+        sslmode: "verify-full"
+      nevaroo-one:
+        host: "nevaroo-one.postgresql.tjo.cloud"
+        user: "svc-console-tjo-cloud"
+        # password is in secret
+        sslmode: "verify-full"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: console
+  labels:
+    app.kubernetes.io/name: console
+    app.kubernetes.io/part-of: console-tjo-cloud
+spec:
+  revisionHistoryLimit: 3
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: console
+      app.kubernetes.io/part-of: console-tjo-cloud
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: valkey
+        app.kubernetes.io/part-of: console-tjo-cloud
+    spec:
+      securityContext:
+        runAsUser: 1000
+      containers:
+        - name: console
+          image: code.tjo.space/tjo-cloud/console:0.1.0-adad30f-dev
+          ports:
+            - containerPort: 8080
+              name: http
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          resources:
+            limits:
+              memory: "200Mi"
+              cpu: "100m"
+          envFrom:
+            - secretRef:
+                name: console
+          volumeMounts:
+            - name: settings
+              mountPath: "/etc/console"
+              readOnly: true
+      volumes:
+        - name: settings
+          configMap:
+            name: console
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: console
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: console
+      app.kubernetes.io/part-of: console-tjo-cloud
+  podMetricsEndpoints:
+    - port: http

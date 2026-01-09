@@ -1,7 +1,23 @@
 default:
   @just --list
 
-pre-commit: test lint format
+
+export SOPS_AGE_KEY_FILE := if os() == "linux" {`echo "$HOME/.config/sops/age/keys.txt"`} else { `echo "$HOME/Library/Application Support/sops/age/keys.txt"` }
+
+import 'secrets.justfile'
+
+encrypt-all: kubernetes-secrets-encrypt
+decrypt-all: kubernetes-secrets-decrypt
+
+post-pull: decrypt-all
+pre-commit: test lint format encrypt-all seal-secrets
+
+VERSION_NUMBER := `cargo pkgid | cut -d# -f2`
+VERSION_REF := `git describe --dirty="-dev" --always`
+VERSION := VERSION_NUMBER + "-" + VERSION_REF
+
+get-version:
+  @echo {{VERSION}}
 
 run:
   @cargo run
@@ -17,16 +33,19 @@ crd-examples: crd-apply
   @kubectl apply -f examples/s3.bucket.yaml
 
 build-bin:
-  @nix build .#bin
+  nix build .#bin
   @mkdir -p dist
   @mv result dist/console
   @ls -la dist/console
 
 build-image:
-  @nix build .#image
+  nix build .#image
   @mkdir -p dist
-  @mv result dist/image.tar.gz
-  @ls -la dist/image.tar.gz
+  @mv result dist/image.{{ VERSION }}.tar.gz
+  @ls -la dist/image.{{ VERSION }}.tar.gz
+
+push-image:
+  skopeo copy docker-archive:dist/image.{{ VERSION }}.tar.gz:console:latest docker://code.tjo.space/tjo-cloud/console:{{ VERSION }}
 
 test:
   @cargo test
@@ -36,9 +55,9 @@ lint:
   @cargo fmt --check
 
 format:
-  @cargo fix
-  @cargo clippy --fix
-  @cargo fmt
+  cargo fix --allow-dirty
+  cargo clippy --fix --allow-dirty
+  cargo fmt
 
 env-up: env-down
   #!/usr/bin/env bash
@@ -61,3 +80,17 @@ env-down:
   @kind delete cluster
   @kubectx  - || true
   @docker compose down
+
+seal-secrets:
+  #!/usr/bin/env bash
+
+  for secret in $(find kubernetes/ -type f -name "*secret.yaml")
+  do
+    sealedSecret=$(echo $secret | sed 's/secret.yaml/secret.sealed.yaml/')
+    echo "Sealing secret ${secret} to file ${sealedSecret}"
+    kubeseal \
+      --controller-namespace kube-system \
+      --controller-name sealed-secrets \
+      --secret-file $secret \
+      --sealed-secret-file $sealedSecret
+  done

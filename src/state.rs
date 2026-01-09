@@ -1,5 +1,5 @@
 use crate::{
-    resources::postgresql::Client as PostgresqlClient, Context, GarageClient, Metrics, Settings,
+    Context, GarageClient, Metrics, Settings, resources::postgresql::Client as PostgresqlClient,
 };
 use chrono::{DateTime, Utc};
 use kube::{

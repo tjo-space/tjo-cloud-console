@@ -75,6 +75,8 @@
             kubectx
             pgcli
             rust-analyzer
+            skopeo
+            kubeseal
           ];
         };
       }

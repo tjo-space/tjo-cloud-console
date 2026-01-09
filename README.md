@@ -32,3 +32,32 @@ Candidates:
   - HTTP Client
 - [opentelemetry](https://github.com/open-telemetry/opentelemetry-rust)
   - Monitoring/Observability. TODO: Currently copy-paste mess.
+
+## Release Flow
+
+```
+# Bump version
+vim Cargo.toml
+
+just build-image
+just push-image
+
+just pre-commit
+git commit -m "chore: release $(just get-version)"
+git tag $(just get-version)
+git push origin $(just get-version)
+git push
+
+# Done
+```
+
+## Deploy Flow
+
+```
+just update-manifests-version $(just get-version)
+
+git commit -m "chore: deploy $(just get-version)"
+git push
+
+# Done, check https://argocd.k8s.tjo.cloud
+```

@@ -28,8 +28,13 @@ pub struct Settings {
 impl Settings {
     pub fn new() -> Result<Self, ConfigError> {
         let settings = Config::builder()
-            .add_source(Environment::with_prefix("TJOCLOUD"))
+            .add_source(
+                Environment::with_prefix("TJOCLOUD")
+                    .separator("__")
+                    .try_parsing(true),
+            )
             .add_source(File::with_name("settings").required(false))
+            .add_source(File::with_name("/etc/console/settings").required(false))
             .build()?;
 
         settings.try_deserialize()
