@@ -55,12 +55,12 @@ data:
       endor-one:
         host: "endor-one.postgresql.tjo.cloud"
         user: "svc-console-tjo-cloud"
-        sslmode: "prefer"
+        sslmode: "require"
         database: "postgres"
       nevaroo-one:
         host: "nevaroo-one.postgresql.tjo.cloud"
         user: "svc-console-tjo-cloud"
-        sslmode: "prefer"
+        sslmode: "require"
         database: "postgres"
 ---
 apiVersion: apps/v1
