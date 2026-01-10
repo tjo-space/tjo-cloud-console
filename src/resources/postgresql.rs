@@ -21,15 +21,13 @@ pub async fn connect(
 
     let (client, connection) = tokio_postgres::connect(
         &format!(
-            "application_name=console-tjo-cloud host={host} user={user} password={password} dbname={database} sslmode={sslmode}"
+            "application_name=console-tjo-cloud host={host} user={user} password='{password}' dbname={database}"
         ),
         connector.clone(),
     )
     .await?;
 
-    info!(
-        "Connected to Postgresql name={name} host={host} user={user} database={database} sslmode={sslmode}"
-    );
+    info!("Connected to Postgresql name={name} host={host} user={user} database={database}");
 
     tokio::spawn(async move {
         if let Err(e) = connection.await {
