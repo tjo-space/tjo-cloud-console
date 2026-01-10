@@ -1,3 +1,45 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: console
+  labels:
+    app.kubernetes.io/name: console
+    app.kubernetes.io/part-of: console-tjo-cloud
+rules:
+- apiGroups: [""]
+  resources: ["secret"]
+  verbs: ["get", "delete"]
+- apiGroups: ["postgresql.tjo.cloud"]
+  resources: ["Database", "User"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["s3.tjo.cloud"]
+  resources: ["Bucket", "Token"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: console
+  labels:
+    app.kubernetes.io/name: console
+    app.kubernetes.io/part-of: console-tjo-cloud
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: console
+  labels:
+    app.kubernetes.io/name: console
+    app.kubernetes.io/part-of: console-tjo-cloud
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: console
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: ServiceAccount
+  name: console
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -45,11 +87,12 @@ spec:
         app.kubernetes.io/name: console
         app.kubernetes.io/part-of: console-tjo-cloud
     spec:
+      serviceAccountName: console
       securityContext:
         runAsUser: 1000
       containers:
         - name: console
-          image: code.tjo.space/tjo-cloud/console:0.1.0-accb174
+          image: code.tjo.space/tjo-cloud/console:0.1.0-a21ab70
           ports:
             - containerPort: 8080
               name: http

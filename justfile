@@ -23,14 +23,15 @@ run:
   @cargo run
 
 crd-generate:
-  @cargo run --bin crdgen > yaml/crd.yaml
+  @cargo run --bin crdgen > kubernetes/crd.yaml
 
 crd-apply: crd-generate
   @if [ "$(kubectx --current)" != "kind-kind" ]; then echo "Please switch to kind-kind kubectl context"; exit 1; fi
-  @kubectl apply -f yaml/crd.yaml
+  @kubectl apply -f kubernetes/crd.yaml
 
 crd-examples: crd-apply
-  @kubectl apply -f examples/s3.bucket.yaml
+  @kubectl apply -f examples/s3.yaml
+  @kubectl apply -f examples/postgresql.yaml
 
 build-bin:
   nix build .#bin
