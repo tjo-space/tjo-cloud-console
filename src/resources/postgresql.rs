@@ -19,6 +19,10 @@ pub async fn connect(
     let connector = TlsConnector::builder().build()?;
     let connector = MakeTlsConnector::new(connector);
 
+    info!(
+        "Connecting to Postgresql name={name} host={host} user={user} database={database} sslmode={sslmode}"
+    );
+
     let (client, connection) = tokio_postgres::connect(
         &format!(
             "application_name=console-tjo-cloud host={host} user={user} password='{password}' dbname={database} sslmode={sslmode}"

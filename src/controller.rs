@@ -23,12 +23,13 @@ pub async fn run(state: State) -> Result<(), Error> {
                 v.password.clone(),
                 v.sslmode.clone(),
             )
-            .await?;
+            .await
+            .unwrap_or_else(|e| panic!("failed to connect to postgresql server {key}: {e:?}"));
 
             Ok::<(String, resources::postgresql::Client), Error>((key, client))
         }))
         .await
-        .expect("failed to connect to postgresql server")
+        .expect("failed to connect to postgresql servers")
         .into_iter()
         .collect();
 
