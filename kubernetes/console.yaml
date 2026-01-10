@@ -73,7 +73,7 @@ metadata:
     app.kubernetes.io/part-of: console-tjo-cloud
 spec:
   revisionHistoryLimit: 3
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: console
