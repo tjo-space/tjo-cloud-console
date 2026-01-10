@@ -50,20 +50,17 @@ data:
   settings.yaml: |
     s3:
       url: "https://api.s3.tjo.cloud"
-      # token is in secret
 
     postgresql:
       endor-one:
         host: "endor-one.postgresql.tjo.cloud"
         user: "svc-console-tjo-cloud"
-        # password is in secret
-        sslmode: "require"
+        sslmode: "prefer"
         database: "postgres"
       nevaroo-one:
         host: "nevaroo-one.postgresql.tjo.cloud"
         user: "svc-console-tjo-cloud"
-        # password is in secret
-        sslmode: "require"
+        sslmode: "prefer"
         database: "postgres"
 ---
 apiVersion: apps/v1
