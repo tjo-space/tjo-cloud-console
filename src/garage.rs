@@ -2,6 +2,7 @@ use reqwest::{header, redirect, Client, StatusCode};
 use serde::Deserialize;
 use serde_json::json;
 use thiserror::Error;
+use tracing::*;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -66,6 +67,8 @@ impl GarageClient {
             .redirect(redirect::Policy::none())
             .build()
             .map_err(Error::Request)?;
+
+        info!("Created new Garage client: url={url}");
 
         Ok(GarageClient {
             token,
