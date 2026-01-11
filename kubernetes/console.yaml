@@ -10,10 +10,10 @@ rules:
   resources: ["secret"]
   verbs: ["create", "delete"]
 - apiGroups: ["postgresql.tjo.cloud"]
-  resources: ["Database", "User"]
+  resources: ["database", "user"]
   verbs: ["get", "list", "watch", "update", "patch"]
 - apiGroups: ["s3.tjo.cloud"]
-  resources: ["Bucket", "Token"]
+  resources: ["bucket", "token"]
   verbs: ["get", "list", "watch", "update", "patch"]
 ---
 apiVersion: v1
