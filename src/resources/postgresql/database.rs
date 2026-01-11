@@ -1,21 +1,20 @@
 use crate::{
-    Context, Error, FINALIZER, Result,
     resources::postgresql::user::{User, UserRef},
-    telemetry,
+    telemetry, Context, Error, Result, FINALIZER,
 };
 use chrono::Utc;
 use futures::StreamExt;
 use kube::{
-    CustomResource, Resource,
     api::{Api, ListParams, Patch, PatchParams, ResourceExt},
     client::Client as KubeClient,
     core::object::HasSpec,
     runtime::{
         controller::{Action, Controller},
         events::{Event, EventType},
-        finalizer::{Event as Finalizer, finalizer},
+        finalizer::{finalizer, Event as Finalizer},
         watcher::Config,
     },
+    CustomResource, Resource,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -218,13 +217,10 @@ fn error_policy(database: Arc<Database>, error: &Error, ctx: Arc<Context>) -> Ac
 /// Initialize the controller and shared state (given the crd is installed)
 pub async fn run(context: Arc<Context>, kube_client: KubeClient) -> Result<(), Error> {
     let databases = Api::<Database>::all(kube_client.clone());
-    if databases
-        .list(&ListParams::default().limit(1))
-        .await
-        .is_err()
-    {
-        return Err(Error::MissingCrds);
-    }
+    match databases.list(&ListParams::default().limit(1)).await {
+        Err(err) => return Err(Error::MissingCrds(err)),
+        Ok(_) => info!("CRDs for Database are installed!"),
+    };
 
     info!("Starting controller");
 

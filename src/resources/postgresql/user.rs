@@ -1,19 +1,19 @@
-use crate::{Context, Error, FINALIZER, Result, telemetry};
+use crate::{telemetry, Context, Error, Result, FINALIZER};
 use chrono::Utc;
 use futures::StreamExt;
 use k8s_openapi::api::core::v1::Secret;
 use kube::{
-    CustomResource, Resource,
     api::{Api, ListParams, Patch, PatchParams, ResourceExt},
     client::Client as KubeClient,
-    core::ObjectMeta,
     core::object::HasSpec,
+    core::ObjectMeta,
     runtime::{
         controller::{Action, Controller},
         events::{Event, EventType},
-        finalizer::{Event as Finalizer, finalizer},
+        finalizer::{finalizer, Event as Finalizer},
         watcher::Config,
     },
+    CustomResource, Resource,
 };
 use rand::distr::{Alphanumeric, SampleString};
 use schemars::JsonSchema;
@@ -234,9 +234,10 @@ fn error_policy(user: Arc<User>, error: &Error, ctx: Arc<Context>) -> Action {
 /// Initialize the controller and shared state (given the crd is installed)
 pub async fn run(context: Arc<Context>, kube_client: KubeClient) -> Result<(), Error> {
     let users = Api::<User>::all(kube_client.clone());
-    if users.list(&ListParams::default().limit(1)).await.is_err() {
-        return Err(Error::MissingCrds);
-    }
+    match users.list(&ListParams::default().limit(1)).await {
+        Err(err) => return Err(Error::MissingCrds(err)),
+        Ok(_) => info!("CRDs for User are installed!"),
+    };
 
     info!("Starting controller");
 

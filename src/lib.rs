@@ -8,8 +8,8 @@ pub enum Error {
     #[error("Kube Error: {0}")]
     KubeError(#[source] kube::Error),
 
-    #[error("CRDS are not installed in cluster")]
-    MissingCrds,
+    #[error("CRDS are not installed in cluster: {0}")]
+    MissingCrds(#[source] kube::Error),
 
     #[error("Finalizer Error: {0}")]
     // NB: awkward type because finalizer::Error embeds the reconciler error (which is this)

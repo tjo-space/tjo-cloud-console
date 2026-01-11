@@ -1,23 +1,22 @@
 use crate::{
-    BucketPermissions, Context, Error, FINALIZER, Result,
     resources::s3::bucket::{Bucket, BucketRef},
-    telemetry,
+    telemetry, BucketPermissions, Context, Error, Result, FINALIZER,
 };
 use chrono::Utc;
 use futures::StreamExt;
 use k8s_openapi::api::core::v1::Secret;
 use kube::{
-    CustomResource, Resource,
     api::{Api, ListParams, Patch, PatchParams, ResourceExt},
     client::Client as KubeClient,
-    core::ObjectMeta,
     core::object::HasSpec,
+    core::ObjectMeta,
     runtime::{
         controller::{Action, Controller},
         events::{Event, EventType},
-        finalizer::{Event as Finalizer, finalizer},
+        finalizer::{finalizer, Event as Finalizer},
         watcher::Config,
     },
+    CustomResource, Resource,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -240,9 +239,10 @@ fn error_policy(token: Arc<Token>, error: &Error, ctx: Arc<Context>) -> Action {
 /// Initialize the controller and shared state (given the crd is installed)
 pub async fn run(context: Arc<Context>, kube_client: KubeClient) -> Result<(), Error> {
     let tokens = Api::<Token>::all(kube_client.clone());
-    if tokens.list(&ListParams::default().limit(1)).await.is_err() {
-        return Err(Error::MissingCrds);
-    }
+    match tokens.list(&ListParams::default().limit(1)).await {
+        Err(err) => return Err(Error::MissingCrds(err)),
+        Ok(_) => info!("CRDs for Token are installed!"),
+    };
 
     info!("Starting controller");
 
