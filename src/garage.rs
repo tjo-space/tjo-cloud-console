@@ -1,4 +1,4 @@
-use reqwest::{Client, StatusCode, header, redirect};
+use reqwest::{header, redirect, Client, StatusCode};
 use serde::Deserialize;
 use serde_json::json;
 use thiserror::Error;
@@ -46,7 +46,7 @@ enum PermissionKind {
     Deny,
 }
 
-static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
+static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
 
 impl GarageClient {
     pub fn new(url: String, token: String) -> Result<GarageClient, Error> {

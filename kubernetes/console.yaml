@@ -50,7 +50,7 @@ metadata:
 data:
   settings.yaml: |
     s3:
-      url: "https://api.s3.tjo.cloud"
+      url: "https://admin.s3.tjo.cloud"
 
     postgresql:
       endor-one:
