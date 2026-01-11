@@ -73,7 +73,7 @@ metadata:
     app.kubernetes.io/part-of: console-tjo-cloud
 spec:
   revisionHistoryLimit: 3
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: console
@@ -89,7 +89,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: console
-          image: code.tjo.space/tjo-cloud/console:0.1.0-3c9a6c7-dev
+          image: code.tjo.space/tjo-cloud/console:0.1.0-a0c6c76-dev
           ports:
             - containerPort: 8080
               name: http
