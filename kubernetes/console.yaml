@@ -58,11 +58,13 @@ data:
         user: "svc-console-tjo-cloud"
         sslmode: "require"
         database: "postgres"
+        ssl_accept_invalid_cert: true
       nevaroo-one:
         host: "nevaroo-one.postgresql.tjo.cloud"
         user: "svc-console-tjo-cloud"
         sslmode: "require"
         database: "postgres"
+        ssl_accept_invalid_cert: true
 ---
 apiVersion: apps/v1
 kind: Deployment

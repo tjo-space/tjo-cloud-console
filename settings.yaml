@@ -7,5 +7,6 @@ postgresql:
     host: "localhost"
     user: "postgres"
     password: "postgres"
-    sslmode: "disable"
+    sslmode: "require"
     database: "postgres"
+    ssl_accept_invalid_cert: true

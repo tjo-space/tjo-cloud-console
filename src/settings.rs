@@ -10,6 +10,7 @@ pub struct Postgresql {
     pub password: String,
     pub sslmode: String,
     pub database: String,
+    pub ssl_accept_invalid_cert: bool,
 }
 
 #[derive(Debug, Deserialize)]
