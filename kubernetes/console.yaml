@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: console
+  name: console-tjo-cloud
   labels:
     app.kubernetes.io/name: console
     app.kubernetes.io/part-of: console-tjo-cloud
@@ -9,12 +9,9 @@ rules:
 - apiGroups: [""]
   resources: ["secret"]
   verbs: ["create", "delete"]
-- apiGroups: ["postgresql.tjo.cloud"]
-  resources: ["database", "user"]
-  verbs: ["get", "list", "watch", "update", "patch"]
-- apiGroups: ["s3.tjo.cloud"]
-  resources: ["bucket", "token"]
-  verbs: ["get", "list", "watch", "update", "patch"]
+- apiGroups: ["postgresql.tjo.cloud", "s3.tjo.cloud"]
+  resources: ["*"]
+  verbs: ["*"]
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -27,14 +24,14 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: console
+  name: console-tjo-cloud
   labels:
     app.kubernetes.io/name: console
     app.kubernetes.io/part-of: console-tjo-cloud
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: console
+  name: console-tjo-cloud
 subjects:
 - kind: ServiceAccount
   name: console
