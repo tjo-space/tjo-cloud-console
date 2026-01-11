@@ -1,8 +1,8 @@
 #![allow(unused_imports, unused_variables)]
 use actix_web::{
-    App, HttpRequest, HttpResponse, HttpServer, Responder, get, middleware, web::Data,
+    get, middleware, web::Data, App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
-pub use console::{self, Settings, State, telemetry};
+pub use console::{self, telemetry, Settings, State};
 use futures::TryFutureExt;
 use tracing::*;
 
@@ -28,6 +28,12 @@ async fn index(c: Data<State>, _req: HttpRequest) -> impl Responder {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     telemetry::init().await;
+
+    info!(
+        "Starting console.tjo.cloud version={0}",
+        env!("CARGO_PKG_VERSION")
+    );
+
     rustls::crypto::ring::default_provider()
         .install_default()
         .expect("Failed to install rustls crypto provider");
