@@ -1,22 +1,23 @@
 use crate::{
+    BucketPermissions, Context, Error, FINALIZER, Result,
     resources::s3::bucket::{Bucket, BucketRef},
-    telemetry, BucketPermissions, Context, Error, Result, FINALIZER,
+    telemetry,
 };
 use chrono::Utc;
 use futures::StreamExt;
 use k8s_openapi::api::core::v1::Secret;
 use kube::{
+    CustomResource, Resource,
     api::{Api, ListParams, Patch, PatchParams, ResourceExt},
     client::Client as KubeClient,
-    core::object::HasSpec,
     core::ObjectMeta,
+    core::object::HasSpec,
     runtime::{
         controller::{Action, Controller},
         events::{Event, EventType},
-        finalizer::{finalizer, Event as Finalizer},
+        finalizer::{Event as Finalizer, finalizer},
         watcher::Config,
     },
-    CustomResource, Resource,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -224,7 +225,7 @@ async fn reconcile(token: Arc<Token>, ctx: Arc<Context>) -> Result<Action> {
 }
 
 fn error_policy(token: Arc<Token>, error: &Error, ctx: Arc<Context>) -> Action {
-    warn!("reconcile failed: {:?}", error);
+    error!("reconcile failed: {:?}", error);
     let oref = token.object_ref(&());
 
     ctx.metrics.reconcile.set_failure(

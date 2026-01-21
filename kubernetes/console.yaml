@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/part-of: console-tjo-cloud
 rules:
 - apiGroups: [""]
-  resources: ["secret"]
+  resources: ["secrets"]
   verbs: ["create", "delete"]
 - apiGroups: ["", "events.k8s.io"]
   resources: ["events"]
@@ -91,7 +91,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: console
-          image: code.tjo.space/tjo-cloud/console:0.1.0-52a6976-dev
+          image: code.tjo.space/tjo-cloud/console:0.1.0-1e92dfd-dev
           ports:
             - containerPort: 8080
               name: http

@@ -1,4 +1,4 @@
-use reqwest::{header, redirect, Client, StatusCode};
+use reqwest::{Client, StatusCode, header, redirect};
 use serde::Deserialize;
 use serde_json::json;
 use thiserror::Error;
@@ -9,8 +9,8 @@ pub enum Error {
     #[error("Request: {0}")]
     Request(reqwest::Error),
 
-    #[error("BadStatusCode: {0}")]
-    BadStatusCode(StatusCode),
+    #[error("StatusCode: {0} Body: {1}")]
+    BadStatusCode(StatusCode, String),
 }
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
@@ -71,7 +71,7 @@ impl GarageClient {
         info!("Created new Garage client: url={url}");
 
         Ok(GarageClient {
-            token,
+            token: token.trim().to_string(),
             url,
             http_client,
         })
@@ -95,7 +95,8 @@ impl GarageClient {
             Ok(res) => {
                 let status_code = res.status();
                 if !status_code.is_success() {
-                    return Err(Error::BadStatusCode(status_code));
+                    let content = res.text().await.map_err(Error::Request)?;
+                    return Err(Error::BadStatusCode(status_code, content));
                 }
                 res.json::<Bucket>().await.map_err(Error::Request)
             }
@@ -116,7 +117,8 @@ impl GarageClient {
             Ok(res) => {
                 let status_code = res.status();
                 if !status_code.is_success() {
-                    return Err(Error::BadStatusCode(status_code));
+                    let content = res.text().await.map_err(Error::Request)?;
+                    return Err(Error::BadStatusCode(status_code, content));
                 }
                 Ok(())
             }
@@ -149,7 +151,8 @@ impl GarageClient {
             Ok(res) => {
                 let status_code = res.status();
                 if !status_code.is_success() {
-                    return Err(Error::BadStatusCode(status_code));
+                    let content = res.text().await.map_err(Error::Request)?;
+                    return Err(Error::BadStatusCode(status_code, content));
                 }
                 res.json::<Key>().await.map_err(Error::Request)
             }
@@ -170,7 +173,8 @@ impl GarageClient {
             Ok(res) => {
                 let status_code = res.status();
                 if !status_code.is_success() {
-                    return Err(Error::BadStatusCode(status_code));
+                    let content = res.text().await.map_err(Error::Request)?;
+                    return Err(Error::BadStatusCode(status_code, content));
                 }
                 Ok(())
             }
@@ -213,7 +217,8 @@ impl GarageClient {
             Ok(res) => {
                 let status_code = res.status();
                 if !status_code.is_success() {
-                    return Err(Error::BadStatusCode(status_code));
+                    let content = res.text().await.map_err(Error::Request)?;
+                    return Err(Error::BadStatusCode(status_code, content));
                 }
                 Ok(())
             }
